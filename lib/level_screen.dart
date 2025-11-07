@@ -4,8 +4,7 @@ import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 import 'main.dart'; // To access LevelProgress and colors
 
-// --- 1. UPDATED Data Structure ---
-// Now holds all images for the 2-phase animation
+// --- 1. Data Structure ---
 class LessonPageData {
   // Phase 1
   final String videoAsset1;
@@ -14,7 +13,6 @@ class LessonPageData {
   final String videoAsset2;
   final String imageAsset2;
   final String objectName2;
-
   // Phase 2
   final String prepositionImage1;
   final String prepositionImage2;
@@ -31,22 +29,21 @@ class LessonPageData {
   });
 }
 
-// --- 2. UPDATED Mock Data ---
-// !! You must add all these images to 'assets/images/' !!
+// --- 2. Mock Data ---
 final Map<int, List<LessonPageData>> levelData = {
   1: [
     LessonPageData(
-      videoAsset1: 'assets/videos/hello.mov',
+      videoAsset1: 'assets/videos/table.MOV',
       imageAsset1: 'assets/images/hello_img.png', // !! ADD
       objectName1: 'Hello',
       videoAsset2: 'assets/videos/thank_you.mov',
-      imageAsset2: 'assets:images/thankyou_img.png', // !! ADD
+      imageAsset2: 'assets/images/thankyou_img.png', // !! ADD
       objectName2: 'Thank You',
       prepositionImage1: 'assets/images/preposition1.png', // !! ADD
       prepositionImage2: 'assets/images/preposition2.png', // !! ADD
     ),
     LessonPageData(
-      videoAsset1: 'assets/videos/water.mov',
+      videoAsset1: 'assets/videos/table.MOV',
       imageAsset1: 'assets/images/water_img.png', // !! ADD
       objectName1: 'Water',
       videoAsset2: 'assets/videos/food.mov',
@@ -60,7 +57,6 @@ final Map<int, List<LessonPageData>> levelData = {
 };
 // --- END MOCK DATA ---
 
-// LevelScreen (hosts PageView) - No changes
 class LevelScreen extends StatefulWidget {
   final int level;
   const LevelScreen({Key? key, required this.level}) : super(key: key);
@@ -101,6 +97,16 @@ class _LevelScreenState extends State<LevelScreen> {
     }
   }
 
+  // --- NEW: Function for previous page ---
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeIn,
+      );
+    }
+  }
+
   void _completeLevel() {
     Provider.of<LevelProgress>(context, listen: false)
         .completeLevel(widget.level);
@@ -130,31 +136,69 @@ class _LevelScreenState extends State<LevelScreen> {
         titleTextStyle: TextStyle(
             color: kPrimaryText, fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      body: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        itemCount: _lessons.length,
-        itemBuilder: (context, index) {
-          return LessonPageWidget(lesson: _lessons[index]);
-        },
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ElevatedButton(
-          onPressed: isLastPage ? _completeLevel : _nextPage,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isLastPage ? Colors.green.shade700 : kPrimaryColor,
-            minimumSize: const Size(double.infinity, 50),
+      // --- EDITED: Removed bottomNavigationBar ---
+
+      // --- NEW: Wrap PageView in a Stack to add buttons ---
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: _lessons.length,
+            itemBuilder: (context, index) {
+              return LessonPageWidget(lesson: _lessons[index]);
+            },
           ),
-          child: Text(isLastPage ? 'Complete Level' : 'Next Page'),
-        ),
+
+          // --- NEW: Previous Page Button ---
+          if (_currentPage > 0) // Only show if not first page
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                    onPressed: _previousPage,
+                  ),
+                ),
+              ),
+            ),
+
+          // --- NEW: Next Page / Complete Button ---
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: isLastPage
+                  ? Tooltip(
+                message: 'Complete Level',
+                child: CircleAvatar(
+                  backgroundColor: Colors.green.withOpacity(0.8),
+                  child: IconButton(
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    onPressed: _completeLevel,
+                  ),
+                ),
+              )
+                  : CircleAvatar(
+                backgroundColor: Colors.black.withOpacity(0.5),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+                  onPressed: _nextPage,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// --- 3. UPDATED Lesson Page Widget ---
-// This now controls the two-phase animation
+// --- 3. Lesson Page Widget ---
+// Controls the 2-phase animation
 class LessonPageWidget extends StatefulWidget {
   final LessonPageData lesson;
   const LessonPageWidget({Key? key, required this.lesson}) : super(key: key);
@@ -174,31 +218,35 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
   void initState() {
     super.initState();
     _initializeVideos();
-    // Start the timer loop
     _startAnimationLoop();
   }
 
   void _startAnimationLoop() {
-    // This timer will fire once and not repeat
+    _animationTimer?.cancel(); // Cancel any existing timer
+    // Set Phase 1
+    if (mounted) {
+      setState(() {
+        _isPhase2 = false;
+      });
+    }
+
+    // Timer to switch to Phase 2
     _animationTimer = Timer(const Duration(seconds: 7), () {
       if (mounted) {
-        // Check if the widget is still on screen
         setState(() {
-          _isPhase2 = true; // Enter Phase 2
+          _isPhase2 = true;
         });
 
-        // Start the second timer to reset the loop
+        // Timer to switch back to Phase 1 and loop
         _animationTimer = Timer(const Duration(seconds: 7), () {
           if (mounted) {
-            setState(() {
-              _isPhase2 = false; // Go back to Phase 1
-            });
-            _startAnimationLoop(); // Start the loop over
+            _startAnimationLoop(); // Restart the loop
           }
         });
       }
     });
   }
+
 
   Future<void> _initializeVideos() async {
     _controller1 = VideoPlayerController.asset(widget.lesson.videoAsset1);
@@ -230,7 +278,7 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
   void dispose() {
     _controller1.dispose();
     _controller2.dispose();
-    _animationTimer?.cancel(); // VERY IMPORTANT: Cancel the timer
+    _animationTimer?.cancel();
     super.dispose();
   }
 
@@ -242,7 +290,6 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
 
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // --- NEW: Animated layout using Stack + AnimatedPositioned ---
     return Stack(
       children: [
         // --- The Main Lesson Content (Phase 1) ---
@@ -279,7 +326,6 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
           width: screenWidth * (1 / 3),
-          // Start off-screen to the right, then slide in
           left: _isPhase2 ? screenWidth * (2 / 3) : screenWidth,
           top: 0,
           bottom: 0,
@@ -293,8 +339,7 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
   }
 }
 
-// --- 4. NEW Helper Widget ---
-// This displays the two stacked preposition images
+// --- 4. Preposition Column ---
 class _PrepositionColumn extends StatelessWidget {
   final String image1;
   final String image2;
@@ -308,12 +353,11 @@ class _PrepositionColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: kBackgroundColor.withOpacity(0.8), // Slight background
+      color: kBackgroundColor.withOpacity(0.8),
       padding: const EdgeInsets.all(12.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Top preposition image
           Expanded(
             child: Card(
               elevation: 4,
@@ -332,7 +376,6 @@ class _PrepositionColumn extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Bottom preposition image
           Expanded(
             child: Card(
               elevation: 4,
@@ -356,8 +399,7 @@ class _PrepositionColumn extends StatelessWidget {
   }
 }
 
-// --- Reusable Lesson Column ---
-// This widget displays one lesson (Video + Image + Text)
+// --- 5. EDITED: Lesson Detail Column (now a Stack) ---
 class _LessonDetailColumn extends StatelessWidget {
   final VideoPlayerController controller;
   final String imageAsset;
@@ -372,56 +414,69 @@ class _LessonDetailColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- EDITED: Removed SingleChildScrollView ---
     return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        // --- EDITED: Added MainAxisAlignment ---
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(8.0),
+      child: Stack(
         children: [
+          // 1. The Video Player (takes up the whole space)
           VideoPlayerCard(
             controller: controller,
             errorText: "Error loading video",
           ),
-          // --- EDITED: Reduced spacing ---
-          const SizedBox(height: 8),
-          Card(
-            elevation: 4,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            child: AspectRatio(
-              // --- EDITED: Changed Aspect Ratio ---
-              aspectRatio: 16 / 9,
-              child: Image.asset(
-                imageAsset,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Text('Image not found',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: kSecondaryText)),
-                    ),
-                  );
-                },
+
+          // 2. The Object Image (in the top-right corner)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Card(
+              elevation: 4,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Container(
+                // Constrain the size of the image
+                height: 80, // Adjust size as needed
+                width: 100, // Adjust size as needed
+                child: Image.asset(
+                  imageAsset,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(Icons.error_outline, color: kSecondaryText),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
-          // --- EDITED: Reduced spacing ---
-          const SizedBox(height: 8),
-          Text(
-            objectName,
-            style: const TextStyle(
-              // --- EDITED: Reduced font size ---
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: kPrimaryText,
+
+          // 3. The Object Name (at the bottom)
+          Positioned(
+            bottom: 8,
+            left: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                objectName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -429,7 +484,7 @@ class _LessonDetailColumn extends StatelessWidget {
   }
 }
 
-// --- Reusable VideoPlayerCard ---
+// --- 6. EDITED: Reusable VideoPlayerCard ---
 class VideoPlayerCard extends StatelessWidget {
   final VideoPlayerController controller;
   final String errorText;
@@ -448,22 +503,30 @@ class VideoPlayerCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.0),
       ),
-      child: (controller.value.isInitialized)
-          ? AspectRatio(
-        aspectRatio: controller.value.aspectRatio,
-        child: VideoPlayer(controller),
-      )
-          : Container(
-        height: 200,
-        decoration: BoxDecoration(color: Colors.black),
-        child: Center(
-          child: Text(
-            errorText,
-            style: const TextStyle(color: Colors.white),
+      // --- EDITED: Make Card fill its parent ---
+      child: SizedBox.expand(
+        child: (controller.value.isInitialized)
+            ? AspectRatio(
+          aspectRatio: controller.value.aspectRatio,
+          // --- EDITED: Add ClipRRect for rounded corners on video ---
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.0),
+            child: VideoPlayer(controller),
+          ),
+        )
+            : Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Center(
+            child: Text(
+              errorText,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ),
       ),
     );
   }
 }
-

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import this
 import 'package:provider/provider.dart';
 import 'level_screen.dart'; // This is the video-only screen
 import 'hidden_object_game_screen.dart'; // This is the new game screen
@@ -13,12 +14,20 @@ const Color kBackgroundColor = Color(0xFFFCFCFA); // The warm off-white backgrou
 
 // 1. The main entry point for the app
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => LevelProgress(),
-      child: const ISLApp(),
-    ),
-  );
+  // --- NEW: Add these lines to lock orientation ---
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]).then((_) {
+    // --- End of new lines ---
+    runApp(
+      ChangeNotifierProvider(
+        create: (context) => LevelProgress(),
+        child: const ISLApp(),
+      ),
+    );
+  });
 }
 
 // 2. The state management class (no change)
@@ -68,8 +77,7 @@ class ISLApp extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ),
-        colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
+        ), colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
       ),
       home: const LevelSelectionScreen(),
       debugShowCheckedModeBanner: false,
@@ -91,8 +99,7 @@ class LevelSelectionScreen extends StatelessWidget {
           // No AppBar, we build the header into the body
           body: SafeArea(
             child: Padding(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
               child: Column(
                 children: [
                   // --- NEW: Header from image ---
@@ -119,8 +126,8 @@ class LevelSelectionScreen extends StatelessWidget {
                                   screenToOpen = LevelScreen(level: levelNumber);
                                   break;
                                 case 2:
-                                  screenToOpen = HiddenObjectGameScreen(
-                                      level: levelNumber);
+                                  screenToOpen =
+                                      HiddenObjectGameScreen(level: levelNumber);
                                   break;
                                 default:
                                   screenToOpen = LevelScreen(level: levelNumber);
@@ -199,6 +206,7 @@ class _AppHeader extends StatelessWidget {
   }
 }
 
+
 // 5. A custom widget for the Level Button
 class LevelButton extends StatelessWidget {
   final int levelNumber;
@@ -218,9 +226,8 @@ class LevelButton extends StatelessWidget {
     Color buttonColor = isLocked ? kLockedColor : kPrimaryColor;
     Color iconColor = isLocked ? kLockedText : Colors.white;
     Color levelTextColor = isLocked ? kLockedText : Colors.white;
-    Color subtitleTextColor =
-    isLocked ? kLockedText : Colors.white.withOpacity(0.8);
-    IconData icon = isLocked ? Icons.lock_outline : Icons.play_arrow; // Changed lock icon
+    Color subtitleTextColor = isLocked ? kLockedText : Colors.white.withOpacity(0.8);
+    IconData icon = isLocked ? Icons.lock : Icons.play_arrow;
     String subtitle = isLocked ? 'Locked' : 'Start Learning';
 
     return InkWell(
@@ -231,16 +238,14 @@ class LevelButton extends StatelessWidget {
         decoration: BoxDecoration(
             color: buttonColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: isLocked
-                ? []
-                : [
-              // Add shadow only if unlocked
+            boxShadow: isLocked ? [] : [ // Add shadow only if unlocked
               BoxShadow(
                 color: kPrimaryColor.withOpacity(0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               )
-            ]),
+            ]
+        ),
         child: Column(
           children: [
             Icon(icon, color: iconColor, size: 24),
