@@ -24,31 +24,36 @@ class HiddenObject {
 }
 
 // List of all objects to find in this level (IN ORDER)
+
+
+// 8th nov - fixed all the placeholder locations
 final List<HiddenObject> level2Objects = [
   HiddenObject(
     name: 'Ball',
     videoPath: 'assets/videos/ball.MOV',
-    top: 0.3, // 30% from top - ADJUST THESE POSITIONS
-    left: 0.2, // 20% from left
+    top: 0.5, // 30% from top - ADJUST THESE POSITIONS //fixed to 50
+    left: 0.55, // 20% from left  // fiixed to 55
     width: 80.0,
     height: 80.0,
   ),
   HiddenObject(
     name: 'Car',
     videoPath: 'assets/videos/car.MOV',
-    top: 0.5, // 50% from top - ADJUST THESE POSITIONS
-    left: 0.6, // 60% from left
+    top: 0.45, // 50% from top - ADJUST THESE POSITIONS // fixed to 45
+    left: 0.43, // 60% from left // fixed to 43
     width: 80.0,
     height: 80.0,
   ),
   HiddenObject(
     name: 'Boat',
     videoPath: 'assets/videos/boat.MOV',
-    top: 0.2, // 20% from top - ADJUST THESE POSITIONS
-    left: 0.7, // 70% from left
+    top: 0.51, // 20% from top - ADJUST THESE POSITIONS
+    left: 0.05, // 70% from left
     width: 80.0,
     height: 80.0,
   ),
+
+  //// Book not visible in the scene
   HiddenObject(
     name: 'Book',
     videoPath: 'assets/videos/book.MOV',
@@ -60,10 +65,10 @@ final List<HiddenObject> level2Objects = [
   HiddenObject(
     name: 'Bicycle',
     videoPath: 'assets/videos/bicycle.MOV',
-    top: 0.4, // 40% from top - ADJUST THESE POSITIONS
-    left: 0.5, // 50% from left
+    top: 0.028, // 40% from top - ADJUST THESE POSITIONS
+    left: 0.7, // 50% from left
     width: 80.0,
-    height: 80.0,
+    height: 100.0,
   ),
 ];
 
@@ -270,7 +275,7 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
             // Background image
             Positioned.fill(
               child: Image.asset(
-                'assets/images/background.png',
+                'assets/images/scene1.png',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
@@ -295,10 +300,10 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
                   // Make it slightly visible for debugging (remove color in production)
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: Colors.yellow.withOpacity(0.5), width: 2.0),
+                        color: Colors.yellow.withOpacity(0), width: 2.0),
                     borderRadius: BorderRadius.circular(8),
                     color: Colors.yellow
-                        .withOpacity(0.1), // Slightly visible for testing
+                        .withOpacity(0), // Slightly visible for testing
                   ),
                 ),
               ),
