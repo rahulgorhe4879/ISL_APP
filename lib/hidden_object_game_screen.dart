@@ -10,8 +10,8 @@ class HiddenObject {
   final String videoPath; // Path to the gesture video
   final double top; // Position from the top (as percentage of screen height)
   final double left; // Position from the left (as percentage of screen width)
-  final double width; // Size of the tappable area
-  final double height;
+  final double width; // Size of the tappable area (as percentage of screen width)
+  final double height; // Size of the tappable area (as percentage of screen height)
 
   HiddenObject({
     required this.name,
@@ -23,52 +23,48 @@ class HiddenObject {
   });
 }
 
-// List of all objects to find in this level (IN ORDER)
-
-
-// 8th nov - fixed all the placeholder locations
+// --- FIX: Converted width and height to ratios ---
+// You will need to adjust these ratios to perfectly match your objects!
 final List<HiddenObject> level2Objects = [
   HiddenObject(
     name: 'Ball',
     videoPath: 'assets/videos/ball.MOV',
-    top: 0.5, // 30% from top - ADJUST THESE POSITIONS //fixed to 50
-    left: 0.55, // 20% from left  // fiixed to 55
-    width: 80.0,
-    height: 80.0,
+    top: 0.45,
+    left: 0.5,
+    width: 0.1, // 10% of screen width
+    height: 0.15, // 15% of screen height
   ),
   HiddenObject(
     name: 'Car',
     videoPath: 'assets/videos/car.MOV',
-    top: 0.45, // 50% from top - ADJUST THESE POSITIONS // fixed to 45
-    left: 0.43, // 60% from left // fixed to 43
-    width: 80.0,
-    height: 80.0,
+    top: 0.40,
+    left: 0.43,
+    width: 0.1, // 10% of screen width
+    height: 0.15, // 15% of screen height
   ),
   HiddenObject(
     name: 'Boat',
     videoPath: 'assets/videos/boat.MOV',
-    top: 0.51, // 20% from top - ADJUST THESE POSITIONS
-    left: 0.05, // 70% from left
-    width: 80.0,
-    height: 80.0,
+    top: 0.45,
+    left: 0.2,
+    width: 0.15, // 15% of screen width
+    height: 0.2, // 20% of screen height
   ),
-
-  //// Book not visible in the scene
   HiddenObject(
     name: 'Book',
     videoPath: 'assets/videos/book.MOV',
-    top: 0.6, // 60% from top - ADJUST THESE POSITIONS
-    left: 0.3, // 30% from left
-    width: 80.0,
-    height: 80.0,
+    top: 0.55,
+    left: 0.7,
+    width: 0.1, // 10% of screen width
+    height: 0.15, // 15% of screen height
   ),
   HiddenObject(
     name: 'Bicycle',
     videoPath: 'assets/videos/bicycle.MOV',
-    top: 0.028, // 40% from top - ADJUST THESE POSITIONS
-    left: 0.7, // 50% from left
-    width: 80.0,
-    height: 100.0,
+    top: 0.13,
+    left: 0.6,
+    width: 0.08, // 15% of screen width
+    height: 0.2, // 20% of screen height
   ),
 ];
 
@@ -276,7 +272,9 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
             Positioned.fill(
               child: Image.asset(
                 'assets/images/scene1.png',
-                fit: BoxFit.cover,
+                // --- THIS IS THE FIX ---
+                fit: BoxFit.contain,
+                // --- END FIX ---
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: Colors.grey.shade300,
@@ -288,22 +286,19 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
               ),
             ),
 
-            // Only show the CURRENT object as tappable
+            // Responsive tap zone
             Positioned(
               top: level2Objects[_currentObjectIndex].top * screenSize.height,
               left: level2Objects[_currentObjectIndex].left * screenSize.width,
-              width: level2Objects[_currentObjectIndex].width,
-              height: level2Objects[_currentObjectIndex].height,
+              width: level2Objects[_currentObjectIndex].width * screenSize.width,
+              height:
+              level2Objects[_currentObjectIndex].height * screenSize.height,
               child: GestureDetector(
                 onTap: () => _onObjectTapped(_currentObjectIndex),
                 child: Container(
-                  // Make it slightly visible for debugging (remove color in production)
+                  // Set to 0 opacity for production
                   decoration: BoxDecoration(
-                    border: Border.all(
-                        color: Colors.yellow.withOpacity(0), width: 2.0),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.yellow
-                        .withOpacity(0), // Slightly visible for testing
+                    color: Colors.yellow.withOpacity(0),
                   ),
                 ),
               ),

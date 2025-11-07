@@ -1,5 +1,9 @@
 import 'dart:async'; // We need this for the Timer
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+//import 'package.flutter/material.dart';
+import 'package:flutter/services.dart'; // <-- Import for orientation
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 import 'main.dart'; // To access LevelProgress and colors
@@ -101,11 +105,27 @@ class _LevelScreenState extends State<LevelScreen> {
   @override
   void initState() {
     super.initState();
+    // --- FIX: Force landscape orientation ---
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    // --- End Fix ---
+
     _lessons = levelData[widget.level] ?? [];
   }
 
   @override
   void dispose() {
+    // --- FIX: Reset orientation when leaving ---
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    // --- End Fix ---
+
     _pageController.dispose();
     super.dispose();
   }
@@ -136,6 +156,16 @@ class _LevelScreenState extends State<LevelScreen> {
 
   void _completeLevel() {
     if (!mounted) return;
+
+    // --- FIX: Reset orientation when leaving ---
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    // --- End Fix ---
+
     Provider.of<LevelProgress>(context, listen: false)
         .completeLevel(widget.level);
     Navigator.pop(context);
@@ -143,7 +173,6 @@ class _LevelScreenState extends State<LevelScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // This will now be true on page 10
     bool isLastPage = _currentPage == _lessons.length - 1;
 
     if (_lessons.isEmpty) {
@@ -311,8 +340,6 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
       return const SizedBox.shrink();
     }
 
-    // --- EDITED: Removed Center and FractionallySizedBox ---
-    // The _LessonDetailColumn will now fill the PageView
     return _LessonDetailColumn(
       controller: _controller,
       imageAsset: widget.lesson.imageAsset,
@@ -337,7 +364,6 @@ class _LessonDetailColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // --- EDITED: Changed padding to be symmetrical ---
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
       child: Stack(
         children: [
@@ -422,7 +448,6 @@ class VideoPlayerCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.0),
       ),
-      // --- EDITED: This code will force the video to fill the card ---
       child: (controller != null && controller!.value.isInitialized)
           ? SizedBox.expand( // Fills the card
         child: FittedBox(
@@ -438,7 +463,6 @@ class VideoPlayerCard extends StatelessWidget {
         ),
       )
           : Container(
-        // No fixed height, let the card size it
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(16.0),

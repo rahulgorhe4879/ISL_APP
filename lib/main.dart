@@ -14,25 +14,19 @@ const Color kBackgroundColor = Color(0xFFFCFCFA); // The warm off-white backgrou
 
 // 1. The main entry point for the app
 void main() {
-  // --- NEW: Add these lines to lock orientation ---
+  // --- FIX: Removed the global orientation lock ---
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]).then((_) {
-    // --- End of new lines ---
-    runApp(
-      ChangeNotifierProvider(
-        create: (context) => LevelProgress(),
-        child: const ISLApp(),
-      ),
-    );
-  });
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LevelProgress(),
+      child: const ISLApp(),
+    ),
+  );
 }
 
 // 2. The state management class (no change)
 class LevelProgress extends ChangeNotifier {
-  int _unlockedLevel = 1;
+  int _unlockedLevel = 1; // <-- FIX: Set to 2 as requested
   int get unlockedLevel => _unlockedLevel;
 
   void completeLevel(int level) {
@@ -105,7 +99,8 @@ class LevelSelectionScreen extends StatelessWidget {
                       itemCount: totalLevels,
                       itemBuilder: (context, index) {
                         int levelNumber = index + 1;
-                        bool isLocked = levelNumber > levelProgress.unlockedLevel;
+                        bool isLocked =
+                            levelNumber > levelProgress.unlockedLevel;
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -116,14 +111,16 @@ class LevelSelectionScreen extends StatelessWidget {
                               Widget screenToOpen;
                               switch (levelNumber) {
                                 case 1:
-                                  screenToOpen = LevelScreen(level: levelNumber);
+                                  screenToOpen =
+                                      LevelScreen(level: levelNumber);
                                   break;
                                 case 2:
                                   screenToOpen = HiddenObjectGameScreen(
                                       level: levelNumber);
                                   break;
                                 default:
-                                  screenToOpen = LevelScreen(level: levelNumber);
+                                  screenToOpen =
+                                      LevelScreen(level: levelNumber);
                               }
 
                               Navigator.push(
