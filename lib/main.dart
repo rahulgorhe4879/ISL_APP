@@ -45,39 +45,34 @@ class LevelProgress extends ChangeNotifier {
 
 // 3. The root widget of your application
 class ISLApp extends StatelessWidget {
-  const ISLApp({Key? key}) : super(key: key);
+  // --- LINT FIX: Use super.key ---
+  const ISLApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ISL App',
       theme: ThemeData(
-        // --- NEW: Updated Theme ---
         primaryColor: kPrimaryColor,
         scaffoldBackgroundColor: kBackgroundColor,
-        fontFamily: 'Roboto', // (Make sure to add this font to pubspec.yaml if you want)
-
-        // We are not using a default AppBar in the new design
+        fontFamily: 'Roboto',
         appBarTheme: const AppBarTheme(
-          backgroundColor: kBackgroundColor, // Match background
+          backgroundColor: kBackgroundColor,
           elevation: 0,
         ),
-
-        // New Button Theme
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: kPrimaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            textStyle:
+            const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ), colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
+        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
       ),
       home: const LevelSelectionScreen(),
       debugShowCheckedModeBanner: false,
@@ -87,7 +82,8 @@ class ISLApp extends StatelessWidget {
 
 // 4. The main screen with Level buttons
 class LevelSelectionScreen extends StatelessWidget {
-  const LevelSelectionScreen({Key? key}) : super(key: key);
+  // --- LINT FIX: Use super.key ---
+  const LevelSelectionScreen({super.key});
 
   final int totalLevels = 3;
 
@@ -96,17 +92,14 @@ class LevelSelectionScreen extends StatelessWidget {
     return Consumer<LevelProgress>(
       builder: (context, levelProgress, child) {
         return Scaffold(
-          // No AppBar, we build the header into the body
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
               child: Column(
                 children: [
-                  // --- NEW: Header from image ---
                   const _AppHeader(),
                   const SizedBox(height: 32),
-
-                  // --- NEW: List of buttons ---
                   Expanded(
                     child: ListView.builder(
                       itemCount: totalLevels,
@@ -126,8 +119,8 @@ class LevelSelectionScreen extends StatelessWidget {
                                   screenToOpen = LevelScreen(level: levelNumber);
                                   break;
                                 case 2:
-                                  screenToOpen =
-                                      HiddenObjectGameScreen(level: levelNumber);
+                                  screenToOpen = HiddenObjectGameScreen(
+                                      level: levelNumber);
                                   break;
                                 default:
                                   screenToOpen = LevelScreen(level: levelNumber);
@@ -145,8 +138,6 @@ class LevelSelectionScreen extends StatelessWidget {
                       },
                     ),
                   ),
-
-                  // --- NEW: Footer text ---
                   const SizedBox(height: 20),
                   const Text(
                     'Complete each level to unlock the next',
@@ -167,7 +158,8 @@ class LevelSelectionScreen extends StatelessWidget {
 
 // --- NEW: Header Widget ---
 class _AppHeader extends StatelessWidget {
-  const _AppHeader({Key? key}) : super(key: key);
+  // --- LINT FIX: Use super.key ---
+  const _AppHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -176,9 +168,8 @@ class _AppHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // The book icon
-            Icon(
-              Icons.menu_book, // Using a standard icon
+            const Icon(
+              Icons.menu_book,
               color: kPrimaryText,
               size: 32,
             ),
@@ -206,46 +197,47 @@ class _AppHeader extends StatelessWidget {
   }
 }
 
-
 // 5. A custom widget for the Level Button
 class LevelButton extends StatelessWidget {
   final int levelNumber;
   final bool isLocked;
   final VoidCallback onPressed;
 
+  // --- LINT FIX: Use super.key ---
   const LevelButton({
-    Key? key,
+    super.key,
     required this.levelNumber,
     required this.isLocked,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    // --- NEW: Completely restyled button to match image ---
     Color buttonColor = isLocked ? kLockedColor : kPrimaryColor;
     Color iconColor = isLocked ? kLockedText : Colors.white;
     Color levelTextColor = isLocked ? kLockedText : Colors.white;
-    Color subtitleTextColor = isLocked ? kLockedText : Colors.white.withOpacity(0.8);
+    Color subtitleTextColor =
+    isLocked ? kLockedText : Colors.white.withAlpha(204); // 0.8 opacity
     IconData icon = isLocked ? Icons.lock : Icons.play_arrow;
     String subtitle = isLocked ? 'Locked' : 'Start Learning';
 
     return InkWell(
-      onTap: isLocked ? null : onPressed, // Disable tap if locked
+      onTap: isLocked ? null : onPressed,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         decoration: BoxDecoration(
             color: buttonColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: isLocked ? [] : [ // Add shadow only if unlocked
+            boxShadow: isLocked
+                ? []
+                : [
               BoxShadow(
-                color: kPrimaryColor.withOpacity(0.3),
+                color: kPrimaryColor.withAlpha(76), // 0.3 opacity
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               )
-            ]
-        ),
+            ]),
         child: Column(
           children: [
             Icon(icon, color: iconColor, size: 24),

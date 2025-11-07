@@ -4,53 +4,81 @@ import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 import 'main.dart'; // To access LevelProgress and colors
 
-// --- 1. Data Structure ---
+// --- 1. SIMPLIFIED Data Structure ---
 class LessonPageData {
-  // Phase 1
-  final String videoAsset1;
-  final String imageAsset1;
-  final String objectName1;
-  final String videoAsset2;
-  final String imageAsset2;
-  final String objectName2;
-  // Phase 2
-  final String prepositionImage1;
-  final String prepositionImage2;
+  final String videoAsset;
+  final String imageAsset;
+  final String objectName;
 
   LessonPageData({
-    required this.videoAsset1,
-    required this.imageAsset1,
-    required this.objectName1,
-    required this.videoAsset2,
-    required this.imageAsset2,
-    required this.objectName2,
-    required this.prepositionImage1,
-    required this.prepositionImage2,
+    required this.videoAsset,
+    required this.imageAsset,
+    required this.objectName,
   });
 }
 
-// --- 2. Mock Data ---
+// --- 2. UPDATED Mock Data (10 pages for Level 1) ---
 final Map<int, List<LessonPageData>> levelData = {
   1: [
+    // Page 1
     LessonPageData(
-      videoAsset1: 'assets/videos/table.MOV',
-      imageAsset1: 'assets/images/hello_img.png', // !! ADD
-      objectName1: 'Hello',
-      videoAsset2: 'assets/videos/thank_you.mov',
-      imageAsset2: 'assets/images/thankyou_img.png', // !! ADD
-      objectName2: 'Thank You',
-      prepositionImage1: 'assets/images/preposition1.png', // !! ADD
-      prepositionImage2: 'assets/images/preposition2.png', // !! ADD
+      videoAsset: 'assets/videos/book.MOV',
+      imageAsset: 'assets/images/book.png',
+      objectName: 'Book',
     ),
+    // Page 2
     LessonPageData(
-      videoAsset1: 'assets/videos/table.MOV',
-      imageAsset1: 'assets/images/water_img.png', // !! ADD
-      objectName1: 'Water',
-      videoAsset2: 'assets/videos/food.mov',
-      imageAsset2: 'assets/images/food_img.png', // !! ADD
-      objectName2: 'Food',
-      prepositionImage1: 'assets/images/preposition3.png', // !! ADD
-      prepositionImage2: 'assets/images/preposition4.png', // !! ADD
+      videoAsset: 'assets/videos/bag.MOV',
+      imageAsset: 'assets/images/bag.png',
+      objectName: 'Bag',
+    ),
+    // Page 3
+    LessonPageData(
+      videoAsset: 'assets/videos/car.MOV',
+      imageAsset: 'assets/images/car.png',
+      objectName: 'Car',
+    ),
+    // Page 4
+    LessonPageData(
+      videoAsset: 'assets/videos/dog.MOV',
+      imageAsset: 'assets/images/dog.png',
+      objectName: 'Dog',
+    ),
+    // Page 5
+    LessonPageData(
+      videoAsset: 'assets/videos/ball.MOV',
+      imageAsset: 'assets/images/ball.png',
+      objectName: 'Ball',
+    ),
+    // Page 6
+    LessonPageData(
+      videoAsset: 'assets/videos/bicycle.MOV',
+      imageAsset: 'assets/images/bicycle.png',
+      objectName: 'bicycle',
+    ),
+    // Page 7
+    LessonPageData(
+      videoAsset: 'assets/videos/boat.MOV',
+      imageAsset: 'assets/images/boat.png',
+      objectName: ' Boat',
+    ),
+    // Page 8
+    LessonPageData(
+      videoAsset: 'assets/videos/clock.MOV',
+      imageAsset: 'assets/images/clock.png',
+      objectName: 'Clock',
+    ),
+    // Page 9
+    LessonPageData(
+      videoAsset: 'assets/videos/fish.MOV',
+      imageAsset: 'assets/images/fish.png',
+      objectName: 'Fish',
+    ),
+    // Page 10
+    LessonPageData(
+      videoAsset: 'assets/videos/table.MOV',
+      imageAsset: 'assets/images/table.png',
+      objectName: 'Table',
     ),
   ],
   // ... add data for other levels
@@ -59,10 +87,10 @@ final Map<int, List<LessonPageData>> levelData = {
 
 class LevelScreen extends StatefulWidget {
   final int level;
-  const LevelScreen({Key? key, required this.level}) : super(key: key);
+  const LevelScreen({super.key, required this.level});
 
   @override
-  _LevelScreenState createState() => _LevelScreenState();
+  State<LevelScreen> createState() => _LevelScreenState();
 }
 
 class _LevelScreenState extends State<LevelScreen> {
@@ -97,7 +125,6 @@ class _LevelScreenState extends State<LevelScreen> {
     }
   }
 
-  // --- NEW: Function for previous page ---
   void _previousPage() {
     if (_currentPage > 0) {
       _pageController.previousPage(
@@ -108,6 +135,7 @@ class _LevelScreenState extends State<LevelScreen> {
   }
 
   void _completeLevel() {
+    if (!mounted) return;
     Provider.of<LevelProgress>(context, listen: false)
         .completeLevel(widget.level);
     Navigator.pop(context);
@@ -115,6 +143,7 @@ class _LevelScreenState extends State<LevelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // This will now be true on page 10
     bool isLastPage = _currentPage == _lessons.length - 1;
 
     if (_lessons.isEmpty) {
@@ -132,13 +161,10 @@ class _LevelScreenState extends State<LevelScreen> {
             'Level ${widget.level} - Page ${_currentPage + 1}/${_lessons.length}'),
         backgroundColor: kBackgroundColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: kPrimaryText),
-        titleTextStyle: TextStyle(
+        iconTheme: const IconThemeData(color: kPrimaryText),
+        titleTextStyle: const TextStyle(
             color: kPrimaryText, fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      // --- EDITED: Removed bottomNavigationBar ---
-
-      // --- NEW: Wrap PageView in a Stack to add buttons ---
       body: Stack(
         children: [
           PageView.builder(
@@ -146,18 +172,21 @@ class _LevelScreenState extends State<LevelScreen> {
             onPageChanged: _onPageChanged,
             itemCount: _lessons.length,
             itemBuilder: (context, index) {
-              return LessonPageWidget(lesson: _lessons[index]);
+              return LessonPageWidget(
+                lesson: _lessons[index],
+                pageIndex: index,
+                currentPageIndex: _currentPage,
+              );
             },
           ),
 
-          // --- NEW: Previous Page Button ---
-          if (_currentPage > 0) // Only show if not first page
+          if (_currentPage > 0)
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: CircleAvatar(
-                  backgroundColor: Colors.black.withOpacity(0.5),
+                  backgroundColor: Colors.black.withAlpha(128),
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                     onPressed: _previousPage,
@@ -166,7 +195,6 @@ class _LevelScreenState extends State<LevelScreen> {
               ),
             ),
 
-          // --- NEW: Next Page / Complete Button ---
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
@@ -175,7 +203,7 @@ class _LevelScreenState extends State<LevelScreen> {
                   ? Tooltip(
                 message: 'Complete Level',
                 child: CircleAvatar(
-                  backgroundColor: Colors.green.withOpacity(0.8),
+                  backgroundColor: Colors.green.withAlpha(204),
                   child: IconButton(
                     icon: const Icon(Icons.check, color: Colors.white),
                     onPressed: _completeLevel,
@@ -183,7 +211,7 @@ class _LevelScreenState extends State<LevelScreen> {
                 ),
               )
                   : CircleAvatar(
-                backgroundColor: Colors.black.withOpacity(0.5),
+                backgroundColor: Colors.black.withAlpha(128),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
                   onPressed: _nextPage,
@@ -197,234 +225,127 @@ class _LevelScreenState extends State<LevelScreen> {
   }
 }
 
-// --- 3. Lesson Page Widget ---
-// Controls the 2-phase animation
+// --- 3. SIMPLIFIED Lesson Page Widget ---
 class LessonPageWidget extends StatefulWidget {
   final LessonPageData lesson;
-  const LessonPageWidget({Key? key, required this.lesson}) : super(key: key);
+  final int pageIndex;
+  final int currentPageIndex;
+
+  const LessonPageWidget({
+    super.key,
+    required this.lesson,
+    required this.pageIndex,
+    required this.currentPageIndex,
+  });
 
   @override
-  _LessonPageWidgetState createState() => _LessonPageWidgetState();
+  State<LessonPageWidget> createState() => _LessonPageWidgetState();
 }
 
 class _LessonPageWidgetState extends State<LessonPageWidget> {
-  late VideoPlayerController _controller1;
-  late VideoPlayerController _controller2;
+  VideoPlayerController? _controller;
   bool _isLoading = true;
-  bool _isPhase2 = false; // Manages which phase we are in
-  Timer? _animationTimer;
+  bool _isPageVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideos();
-    _startAnimationLoop();
-  }
+    _isPageVisible = widget.pageIndex == widget.currentPageIndex;
 
-  void _startAnimationLoop() {
-    _animationTimer?.cancel(); // Cancel any existing timer
-    // Set Phase 1
-    if (mounted) {
-      setState(() {
-        _isPhase2 = false;
-      });
+    if (_isPageVisible) {
+      _initializeAndPlayVideos();
     }
-
-    // Timer to switch to Phase 2
-    _animationTimer = Timer(const Duration(seconds: 7), () {
-      if (mounted) {
-        setState(() {
-          _isPhase2 = true;
-        });
-
-        // Timer to switch back to Phase 1 and loop
-        _animationTimer = Timer(const Duration(seconds: 7), () {
-          if (mounted) {
-            _startAnimationLoop(); // Restart the loop
-          }
-        });
-      }
-    });
   }
 
-
-  Future<void> _initializeVideos() async {
-    _controller1 = VideoPlayerController.asset(widget.lesson.videoAsset1);
-    _controller2 = VideoPlayerController.asset(widget.lesson.videoAsset2);
+  Future<void> _initializeAndPlayVideos() async {
+    if (_controller != null) return;
 
     try {
-      await Future.wait([
-        _controller1.initialize(),
-        _controller2.initialize(),
-      ]);
-
-      _controller1.setLooping(true);
-      _controller1.play();
-      _controller2.setLooping(true);
-      _controller2.play();
-
-      setState(() {
-        _isLoading = false;
-      });
+      _controller = VideoPlayerController.asset(widget.lesson.videoAsset);
+      await _controller!.initialize();
+      _controller!.setLooping(true);
+      _controller!.play();
     } catch (e) {
-      print('Error initializing videos: $e');
+      print('!!! ERROR initializing video (${widget.lesson.videoAsset}): $e');
+    }
+
+    if (mounted) {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  void _disposeVideos() {
+    _controller?.dispose();
+    _controller = null;
+  }
+
+  @override
+  void didUpdateWidget(LessonPageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final bool isVisible = widget.pageIndex == widget.currentPageIndex;
+
+    if (isVisible && !_isPageVisible) {
+      _isLoading = true;
+      _initializeAndPlayVideos();
+    } else if (!isVisible && _isPageVisible) {
+      _disposeVideos();
+    }
+
+    _isPageVisible = isVisible;
   }
 
   @override
   void dispose() {
-    _controller1.dispose();
-    _controller2.dispose();
-    _animationTimer?.cancel();
+    _disposeVideos();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+      if (widget.pageIndex == widget.currentPageIndex) {
+        return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+      }
+      return const SizedBox.shrink();
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Stack(
-      children: [
-        // --- The Main Lesson Content (Phase 1) ---
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          width: _isPhase2 ? screenWidth * (2 / 3) : screenWidth,
-          left: 0,
-          top: 0,
-          bottom: 0,
-          child: Row(
-            children: [
-              Expanded(
-                child: _LessonDetailColumn(
-                  controller: _controller1,
-                  imageAsset: widget.lesson.imageAsset1,
-                  objectName: widget.lesson.objectName1,
-                ),
-              ),
-              VerticalDivider(width: 2.0, color: Colors.grey.shade300),
-              Expanded(
-                child: _LessonDetailColumn(
-                  controller: _controller2,
-                  imageAsset: widget.lesson.imageAsset2,
-                  objectName: widget.lesson.objectName2,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // --- The Preposition Content (Phase 2) ---
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          width: screenWidth * (1 / 3),
-          left: _isPhase2 ? screenWidth * (2 / 3) : screenWidth,
-          top: 0,
-          bottom: 0,
-          child: _PrepositionColumn(
-            image1: widget.lesson.prepositionImage1,
-            image2: widget.lesson.prepositionImage2,
-          ),
-        ),
-      ],
+    // --- EDITED: Removed Center and FractionallySizedBox ---
+    // The _LessonDetailColumn will now fill the PageView
+    return _LessonDetailColumn(
+      controller: _controller,
+      imageAsset: widget.lesson.imageAsset,
+      objectName: widget.lesson.objectName,
     );
   }
 }
 
-// --- 4. Preposition Column ---
-class _PrepositionColumn extends StatelessWidget {
-  final String image1;
-  final String image2;
-
-  const _PrepositionColumn({
-    Key? key,
-    required this.image1,
-    required this.image2,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: kBackgroundColor.withOpacity(0.8),
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Card(
-              elevation: 4,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              child: Image.asset(
-                image1,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(child: Text('Image not found'));
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Card(
-              elevation: 4,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              child: Image.asset(
-                image2,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(child: Text('Image not found'));
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// --- 5. EDITED: Lesson Detail Column (now a Stack) ---
+// --- 4. SIMPLIFIED Lesson Detail Column (Stack) ---
 class _LessonDetailColumn extends StatelessWidget {
-  final VideoPlayerController controller;
+  final VideoPlayerController? controller;
   final String imageAsset;
   final String objectName;
 
   const _LessonDetailColumn({
-    Key? key,
+    super.key,
     required this.controller,
     required this.imageAsset,
     required this.objectName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      // --- EDITED: Changed padding to be symmetrical ---
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
       child: Stack(
         children: [
-          // 1. The Video Player (takes up the whole space)
           VideoPlayerCard(
             controller: controller,
-            errorText: "Error loading video",
+            errorText: "Video Error",
           ),
 
-          // 2. The Object Image (in the top-right corner)
           Positioned(
             top: 8,
             right: 8,
@@ -435,9 +356,8 @@ class _LessonDetailColumn extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: Container(
-                // Constrain the size of the image
-                height: 80, // Adjust size as needed
-                width: 100, // Adjust size as needed
+                height: 80,
+                width: 100,
                 child: Image.asset(
                   imageAsset,
                   fit: BoxFit.cover,
@@ -454,7 +374,6 @@ class _LessonDetailColumn extends StatelessWidget {
             ),
           ),
 
-          // 3. The Object Name (at the bottom)
           Positioned(
             bottom: 8,
             left: 8,
@@ -462,7 +381,7 @@ class _LessonDetailColumn extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withAlpha(153),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -484,16 +403,16 @@ class _LessonDetailColumn extends StatelessWidget {
   }
 }
 
-// --- 6. EDITED: Reusable VideoPlayerCard ---
+// --- 5. Reusable VideoPlayerCard ---
 class VideoPlayerCard extends StatelessWidget {
-  final VideoPlayerController controller;
+  final VideoPlayerController? controller;
   final String errorText;
 
   const VideoPlayerCard({
-    Key? key,
+    super.key,
     required this.controller,
     required this.errorText,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -503,27 +422,31 @@ class VideoPlayerCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.0),
       ),
-      // --- EDITED: Make Card fill its parent ---
-      child: SizedBox.expand(
-        child: (controller.value.isInitialized)
-            ? AspectRatio(
-          aspectRatio: controller.value.aspectRatio,
-          // --- EDITED: Add ClipRRect for rounded corners on video ---
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.0),
-            child: VideoPlayer(controller),
-          ),
-        )
-            : Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          child: Center(
-            child: Text(
-              errorText,
-              style: const TextStyle(color: Colors.white),
+      // --- EDITED: This code will force the video to fill the card ---
+      child: (controller != null && controller!.value.isInitialized)
+          ? SizedBox.expand( // Fills the card
+        child: FittedBox(
+          fit: BoxFit.cover, // Zooms/crops to fill
+          child: SizedBox(
+            width: controller!.value.size.width,
+            height: controller!.value.size.height,
+            child: ClipRRect( // Clip to the rounded corners
+              borderRadius: BorderRadius.circular(16.0),
+              child: VideoPlayer(controller!),
             ),
+          ),
+        ),
+      )
+          : Container(
+        // No fixed height, let the card size it
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: Center(
+          child: Text(
+            errorText,
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       ),
