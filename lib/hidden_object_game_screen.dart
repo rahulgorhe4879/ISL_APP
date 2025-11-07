@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import 'main.dart'; // To access LevelProgress and colors
 
 // This class holds the data for a single object to be found
 class HiddenObject {
-  final String name; // The name of the object (must match target list)
-  final String assetPath; // Path to the object's image (e.g., 'assets/images/book.png')
-  final double top; // Position from the top
-  final double left; // Position from the left
+  final String name; // The name of the object
+  final String videoPath; // Path to the gesture video
+  final double top; // Position from the top (as percentage of screen height)
+  final double left; // Position from the left (as percentage of screen width)
   final double width; // Size of the tappable area
   final double height;
 
   HiddenObject({
     required this.name,
-    required this.assetPath,
+    required this.videoPath,
     required this.top,
     required this.left,
     required this.width,
@@ -21,46 +23,49 @@ class HiddenObject {
   });
 }
 
-// List of all objects to find in this level
+// List of all objects to find in this level (IN ORDER)
 final List<HiddenObject> level2Objects = [
-  // !! REPLACE with your assets and positions
+  HiddenObject(
+    name: 'Ball',
+    videoPath: 'assets/videos/ball.MOV',
+    top: 0.3, // 30% from top - ADJUST THESE POSITIONS
+    left: 0.2, // 20% from left
+    width: 80.0,
+    height: 80.0,
+  ),
+  HiddenObject(
+    name: 'Car',
+    videoPath: 'assets/videos/car.MOV',
+    top: 0.5, // 50% from top - ADJUST THESE POSITIONS
+    left: 0.6, // 60% from left
+    width: 80.0,
+    height: 80.0,
+  ),
+  HiddenObject(
+    name: 'Boat',
+    videoPath: 'assets/videos/boat.MOV',
+    top: 0.2, // 20% from top - ADJUST THESE POSITIONS
+    left: 0.7, // 70% from left
+    width: 80.0,
+    height: 80.0,
+  ),
   HiddenObject(
     name: 'Book',
-    assetPath: 'assets/images/book.png', // !! REPLACE
-    top: 150.0,
-    left: 220.0,
-    width: 50.0,
-    height: 50.0,
+    videoPath: 'assets/videos/book.MOV',
+    top: 0.6, // 60% from top - ADJUST THESE POSITIONS
+    left: 0.3, // 30% from left
+    width: 80.0,
+    height: 80.0,
   ),
   HiddenObject(
-    name: 'Fan',
-    assetPath: 'assets/images/fan.png', // !! REPLACE
-    top: 300.0,
-    left: 100.0,
-    width: 60.0,
-    height: 60.0,
-  ),
-  HiddenObject(
-    name: 'Cat',
-    assetPath: 'assets/images/cat.png', // !! REPLACE
-    top: 450.0,
-    left: 250.0,
-    width: 70.0,
-    height: 70.0,
-  ),
-  HiddenObject(
-    name: 'Clock',
-    assetPath: 'assets/images/clock.png', // !! REPLACE
-    top: 80.0,
-    left: 50.0,
-    width: 40.0,
-    height: 40.0,
+    name: 'Bicycle',
+    videoPath: 'assets/videos/bicycle.MOV',
+    top: 0.4, // 40% from top - ADJUST THESE POSITIONS
+    left: 0.5, // 50% from left
+    width: 80.0,
+    height: 80.0,
   ),
 ];
-
-// List of the target words for the user to find
-final List<String> level2Targets = ['Book', 'Fan', 'Cat', 'Clock'];
-// --- End Level 2 Config ---
 
 class HiddenObjectGameScreen extends StatefulWidget {
   final int level;
@@ -72,28 +77,111 @@ class HiddenObjectGameScreen extends StatefulWidget {
 }
 
 class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
-  // A Set to keep track of which items we've found
-  final Set<String> _foundObjects = {};
+  int _currentObjectIndex = 0; // Track which object to find next
   bool _allFound = false;
+  VideoPlayerController? _videoController;
+  bool _isVideoPlaying = false;
+  bool _showGame = false; // Control when to show the game
 
-  void _onObjectTapped(String objectName) {
-    // Check if this is a target object and hasn't been found yet
-    if (level2Targets.contains(objectName) &&
-        !_foundObjects.contains(objectName)) {
+  @override
+  void initState() {
+    super.initState();
+    // Force landscape orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    // Start by playing the first gesture video
+    _playGestureVideo(0);
+  }
+
+  Future<void> _playGestureVideo(int index) async {
+    if (index >= level2Objects.length) {
+      // All objects found
       setState(() {
-        _foundObjects.add(objectName);
-
-        // Check if all objects have been found
-        if (_foundObjects.length == level2Targets.length) {
-          _allFound = true;
-        }
+        _allFound = true;
+        _showGame = false;
       });
+      return;
+    }
 
-      // Show a confirmation snackbar
+    setState(() {
+      _isVideoPlaying = true;
+      _showGame = false;
+    });
+
+    // Dispose previous controller if exists
+    await _videoController?.dispose();
+
+    // Create new controller for the current gesture
+    _videoController = VideoPlayerController.asset(
+      level2Objects[index].videoPath,
+    );
+
+    try {
+      await _videoController!.initialize();
+      setState(() {}); // Rebuild to show video once initialized
+      await _videoController!.play();
+
+      // Listen for video completion
+      _videoController!.addListener(_videoListener);
+    } catch (e) {
+      print('Error loading video: $e');
+      // If video fails, show the game anyway
+      setState(() {
+        _isVideoPlaying = false;
+        _showGame = true;
+      });
+    }
+  }
+
+  void _videoListener() {
+    if (_videoController != null &&
+        !_videoController!.value.isPlaying &&
+        _videoController!.value.position >= _videoController!.value.duration) {
+      // Video finished playing
+      _videoController!.removeListener(_videoListener);
+      setState(() {
+        _isVideoPlaying = false;
+        _showGame = true;
+      });
+    }
+  }
+
+  void _onObjectTapped(int tappedIndex) {
+    // Check if this is the correct object to find
+    if (tappedIndex == _currentObjectIndex) {
+      // Correct object found!
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('You found the $objectName!'),
+          content: Text('You found the ${level2Objects[tappedIndex].name}!'),
           backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      // Move to next object
+      setState(() {
+        _currentObjectIndex++;
+      });
+
+      // Play next gesture video
+      if (_currentObjectIndex < level2Objects.length) {
+        _playGestureVideo(_currentObjectIndex);
+      } else {
+        // All objects found
+        setState(() {
+          _allFound = true;
+          _showGame = false;
+        });
+      }
+    } else {
+      // Wrong object tapped
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Try again! Look for the gesture shown.'),
+          backgroundColor: Colors.red.shade700,
           duration: const Duration(seconds: 1),
         ),
       );
@@ -101,165 +189,199 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
   }
 
   void _completeLevel() {
+    // Reset orientation before leaving
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     Provider.of<LevelProgress>(context, listen: false)
         .completeLevel(widget.level);
     Navigator.pop(context);
   }
 
   @override
+  void dispose() {
+    // Reset orientation when leaving the screen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    _videoController?.removeListener(_videoListener);
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Level ${widget.level} - Find the Objects'),
-        backgroundColor: kBackgroundColor, // Match new theme
+        backgroundColor: kBackgroundColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: kPrimaryText), // Match new theme
-        titleTextStyle: TextStyle( // Match new theme
-            color: kPrimaryText,
-            fontSize: 20,
-            fontWeight: FontWeight.bold
+        iconTheme: IconThemeData(color: kPrimaryText),
+        titleTextStyle: TextStyle(
+          color: kPrimaryText,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
         ),
       ),
-      // --- NEW: Use a Stack to overlay the HUD on the game ---
       body: Stack(
         children: [
-          // --- 1. The Game Area ---
-          InteractiveViewer(
-            // Allows pinch-to-zoom
-            maxScale: 4.0,
-            child: Stack(
-              children: [
-                // --- The Background Image ---
-                Positioned.fill(
-                  child: Image.asset(
-                    'assets/images/background.jpg', // !! REPLACE
-                    fit: BoxFit.cover,
-                    // Error handling for missing image
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade300,
-                        child: const Center(
-                          child: Text('Error: Could not load background.jpg'),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // --- The Tappable Objects ---
-                ...level2Objects.map((obj) {
-                  bool isFound = _foundObjects.contains(obj.name);
-                  return Positioned(
-                    top: obj.top,
-                    left: obj.left,
-                    width: obj.width,
-                    height: obj.height,
-                    child: GestureDetector(
-                      onTap: () => _onObjectTapped(obj.name),
-                      child: Container(
-                        // --- NEW: More visible "found" indicator ---
-                        decoration: isFound
-                            ? BoxDecoration(
-                            border: Border.all(
-                                color: Colors.greenAccent, width: 4.0),
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.green.withOpacity(0.4))
-                            : null,
-                        child: Image.asset(
-                          obj.assetPath,
-                          fit: BoxFit.contain,
-                          // Error handling for missing object images
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.red.withOpacity(0.3),
-                              child: Center(
-                                child: Text(obj.name,
-                                    style: const TextStyle(
-                                        fontSize: 10, color: Colors.white)),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-
-          // --- 2. The Target List (as an overlay) ---
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              // --- NEW: A semi-transparent "HUD" background ---
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8), // Adjusted padding
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Find these objects:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white, // NEW: White text
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12.0,
-                    runSpacing: 8.0,
-                    children: level2Targets.map((target) {
-                      bool isFound = _foundObjects.contains(target);
-                      return Chip(
-                        label: Text(
-                          target,
-                          style: TextStyle(
-                            color: isFound ? Colors.white : Colors.black87,
-                            decoration: isFound
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
-                          ),
-                        ),
-                        // --- NEW: Better chip colors ---
-                        backgroundColor: isFound
-                            ? Colors.green.shade600
-                            : Colors.grey.shade200,
-                        avatar: isFound
-                            ? const Icon(Icons.check, color: Colors.white)
-                            : null,
-                      );
-                    }).toList(),
-                  ),
-                  // --- 3. The Complete Level Button ---
-                  if (_allFound)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-                      child: ElevatedButton(
-                        onPressed: _completeLevel,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade700,
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text('Level Complete!'),
-                      ),
+          // Show video when playing gesture
+          if (_isVideoPlaying && _videoController != null)
+            Center(
+              child: _videoController!.value.isInitialized
+                  ? AspectRatio(
+                      aspectRatio: _videoController!.value.aspectRatio,
+                      child: VideoPlayer(_videoController!),
                     )
-                ],
-              ),
+                  : const CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
             ),
-          ),
+
+          // Show game when video is done
+          if (_showGame) _buildGameArea(screenSize),
+
+          // Show completion screen when all objects found
+          if (_allFound) _buildCompletionScreen(),
         ],
       ),
     );
   }
-}
 
+  Widget _buildGameArea(Size screenSize) {
+    return InteractiveViewer(
+      maxScale: 3.0,
+      child: Container(
+        width: screenSize.width,
+        height: screenSize.height,
+        child: Stack(
+          children: [
+            // Background image
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/background.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey.shade300,
+                    child: const Center(
+                      child: Text('Error: Could not load background.png'),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Only show the CURRENT object as tappable
+            Positioned(
+              top: level2Objects[_currentObjectIndex].top * screenSize.height,
+              left: level2Objects[_currentObjectIndex].left * screenSize.width,
+              width: level2Objects[_currentObjectIndex].width,
+              height: level2Objects[_currentObjectIndex].height,
+              child: GestureDetector(
+                onTap: () => _onObjectTapped(_currentObjectIndex),
+                child: Container(
+                  // Make it slightly visible for debugging (remove color in production)
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.yellow.withOpacity(0.5), width: 2.0),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.yellow
+                        .withOpacity(0.1), // Slightly visible for testing
+                  ),
+                ),
+              ),
+            ),
+
+            // Progress indicator at the top
+            Positioned(
+              top: 20,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(level2Objects.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        index < _currentObjectIndex
+                            ? Icons.check_circle
+                            : Icons.circle_outlined,
+                        color: index < _currentObjectIndex
+                            ? Colors.green
+                            : Colors.white,
+                        size: 24,
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompletionScreen() {
+    return Container(
+      color: Colors.black.withOpacity(0.8),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.celebration,
+              color: Colors.yellow,
+              size: 80,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Level Complete!',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'You found all ${level2Objects.length} objects!',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: _completeLevel,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade700,
+                minimumSize: const Size(200, 60),
+                textStyle: const TextStyle(fontSize: 20),
+              ),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
