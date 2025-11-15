@@ -4,14 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'main.dart'; // To access LevelProgress and colors
 
-// This class holds the data for a single object to be found
+// --- Data structure
 class HiddenObject {
-  final String name; // The name of the object
-  final String videoPath; // Path to the gesture video
-  final double top; // Position from the top (as percentage of screen height)
-  final double left; // Position from the left (as percentage of screen width)
-  final double width; // Size of the tappable area (as percentage of screen width)
-  final double height; // Size of the tappable area (as percentage of screen height)
+  final String name;
+  final String videoPath;
+  final double top; // Percentage of screen height (0.0 to 1.0)
+  final double left; // Percentage of screen width (0.0 to 1.0)
+  final double width; // Percentage of screen width
+  final double height; // Percentage of screen height
 
   HiddenObject({
     required this.name,
@@ -23,83 +23,86 @@ class HiddenObject {
   });
 }
 
-// --- FIX: Converted width and height to ratios ---
-// You will need to adjust these ratios to perfectly match your objects!
+// --- DATA SETUP ---
 final List<HiddenObject> level2Objects = [
+  // 1. 'Ball' -> Mapped to Green Cabinet on left
   HiddenObject(
     name: 'Ball',
     videoPath: 'assets/videos/ball.MOV',
-    top: 0.45,
-    left: 0.5,
-    width: 0.1, // 10% of screen width
-    height: 0.15, // 15% of screen height
+    top: 0.40,
+    left: 0.15,
+    width: 0.20,
+    height: 0.25,
   ),
+  // 2. 'Car' -> Mapped to Red Mantle
   HiddenObject(
     name: 'Car',
     videoPath: 'assets/videos/car.MOV',
     top: 0.40,
-    left: 0.43,
-    width: 0.1, // 10% of screen width
-    height: 0.15, // 15% of screen height
+    left: 0.45,
+    width: 0.15,
+    height: 0.15,
   ),
+  // 3. 'Boat' -> Mapped to Red Vase
   HiddenObject(
     name: 'Boat',
     videoPath: 'assets/videos/boat.MOV',
-    top: 0.45,
-    left: 0.2,
-    width: 0.15, // 15% of screen width
-    height: 0.2, // 20% of screen height
+    top: 0.50,
+    left: 0.52,
+    width: 0.10,
+    height: 0.15,
   ),
+  // 4. 'Book' -> Mapped to Green Window
   HiddenObject(
     name: 'Book',
     videoPath: 'assets/videos/book.MOV',
-    top: 0.55,
-    left: 0.7,
-    width: 0.1, // 10% of screen width
-    height: 0.15, // 15% of screen height
+    top: 0.30,
+    left: 0.65,
+    width: 0.15,
+    height: 0.25,
   ),
+  // 5. 'Bicycle' -> Mapped to Red Pillow
   HiddenObject(
     name: 'Bicycle',
     videoPath: 'assets/videos/bicycle.MOV',
-    top: 0.13,
-    left: 0.6,
-    width: 0.08, // 15% of screen width
-    height: 0.2, // 20% of screen height
+    top: 0.55,
+    left: 0.70,
+    width: 0.20,
+    height: 0.15,
   ),
 ];
 
 class HiddenObjectGameScreen extends StatefulWidget {
   final int level;
-  const HiddenObjectGameScreen({Key? key, required this.level})
-      : super(key: key);
+  const HiddenObjectGameScreen({Key? key, required this.level}) : super(key: key);
 
   @override
   _HiddenObjectGameScreenState createState() => _HiddenObjectGameScreenState();
 }
 
 class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
-  int _currentObjectIndex = 0; // Track which object to find next
+  // --- SET THIS TO TRUE TO SEE THE CLICK ZONES ---
+  final bool _debugMode = true;
+
+  int _currentObjectIndex = 0;
   bool _allFound = false;
   VideoPlayerController? _videoController;
   bool _isVideoPlaying = false;
-  bool _showGame = false; // Control when to show the game
+  bool _showGame = false;
+  bool _showWrongClickOverlay = false;
 
   @override
   void initState() {
     super.initState();
-    // Force landscape orientation
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-
-    // Start by playing the first gesture video
     _playGestureVideo(0);
   }
 
   Future<void> _playGestureVideo(int index) async {
     if (index >= level2Objects.length) {
-      // All objects found
       setState(() {
         _allFound = true;
         _showGame = false;
@@ -112,24 +115,16 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
       _showGame = false;
     });
 
-    // Dispose previous controller if exists
     await _videoController?.dispose();
-
-    // Create new controller for the current gesture
-    _videoController = VideoPlayerController.asset(
-      level2Objects[index].videoPath,
-    );
+    _videoController = VideoPlayerController.asset(level2Objects[index].videoPath);
 
     try {
       await _videoController!.initialize();
-      setState(() {}); // Rebuild to show video once initialized
+      setState(() {});
       await _videoController!.play();
-
-      // Listen for video completion
       _videoController!.addListener(_videoListener);
     } catch (e) {
       print('Error loading video: $e');
-      // If video fails, show the game anyway
       setState(() {
         _isVideoPlaying = false;
         _showGame = true;
@@ -141,7 +136,6 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
     if (_videoController != null &&
         !_videoController!.value.isPlaying &&
         _videoController!.value.position >= _videoController!.value.duration) {
-      // Video finished playing
       _videoController!.removeListener(_videoListener);
       setState(() {
         _isVideoPlaying = false;
@@ -150,69 +144,73 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
     }
   }
 
-  void _onObjectTapped(int tappedIndex) {
-    // Check if this is the correct object to find
+  void _onObjectTapped(int tappedIndex) async {
     if (tappedIndex == _currentObjectIndex) {
-      // Correct object found!
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('You found the ${level2Objects[tappedIndex].name}!'),
           backgroundColor: Colors.green.shade700,
-          duration: const Duration(seconds: 1),
+          duration: const Duration(milliseconds: 1000),
         ),
       );
 
-      // Move to next object
       setState(() {
         _currentObjectIndex++;
       });
 
-      // Play next gesture video
       if (_currentObjectIndex < level2Objects.length) {
         _playGestureVideo(_currentObjectIndex);
       } else {
-        // All objects found
         setState(() {
           _allFound = true;
           _showGame = false;
         });
       }
     } else {
-      // Wrong object tapped
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Try again! Look for the gesture shown.'),
+          content: const Text(''),
           backgroundColor: Colors.red.shade700,
-          duration: const Duration(seconds: 1),
+          duration: const Duration(milliseconds: 000),
         ),
       );
+
+      // Show red overlay
+      setState(() {
+        _showWrongClickOverlay = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (mounted) {
+        setState(() {
+          _showWrongClickOverlay = false;
+        });
+      }
     }
   }
 
-  void _completeLevel() {
-    // Reset orientation before leaving
+  void _exitScreen() {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-
-    Provider.of<LevelProgress>(context, listen: false)
-        .completeLevel(widget.level);
     Navigator.pop(context);
+  }
+
+  void _completeLevel() {
+    Provider.of<LevelProgress>(context, listen: false).completeLevel(widget.level);
+    _exitScreen();
   }
 
   @override
   void dispose() {
-    // Reset orientation when leaving the screen
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-
     _videoController?.removeListener(_videoListener);
     _videoController?.dispose();
     super.dispose();
@@ -224,37 +222,58 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text('Level ${widget.level} - Find the Objects'),
-        backgroundColor: kBackgroundColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: kPrimaryText),
-        titleTextStyle: TextStyle(
-          color: kPrimaryText,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
       body: Stack(
         children: [
-          // Show video when playing gesture
+          // 1. BACKGROUND & GAME AREA
+          Positioned.fill(
+            child: _showGame
+                ? _buildGameArea(screenSize)
+                : Container(color: Colors.black),
+          ),
+
+          // 2. VIDEO PLAYER OVERLAY
           if (_isVideoPlaying && _videoController != null)
-            Center(
-              child: _videoController!.value.isInitialized
-                  ? AspectRatio(
-                aspectRatio: _videoController!.value.aspectRatio,
-                child: VideoPlayer(_videoController!),
-              )
-                  : const CircularProgressIndicator(
-                color: Colors.white,
+            Container(
+              color: Colors.black,
+              child: Center(
+                child: _videoController!.value.isInitialized
+                    ? AspectRatio(
+                  aspectRatio: _videoController!.value.aspectRatio,
+                  child: VideoPlayer(_videoController!),
+                )
+                    : const CircularProgressIndicator(color: kPrimaryColor),
               ),
             ),
 
-          // Show game when video is done
-          if (_showGame) _buildGameArea(screenSize),
-
-          // Show completion screen when all objects found
+          // 3. COMPLETION SCREEN
           if (_allFound) _buildCompletionScreen(),
+
+          // 4. CLOSE BUTTON
+          if (!_allFound && !_isVideoPlaying)
+            Positioned(
+              top: 20,
+              left: 20,
+              child: SafeArea(
+                child: CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  radius: 20,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    onPressed: _exitScreen,
+                  ),
+                ),
+              ),
+            ),
+
+          // 5. WRONG CLICK RED OVERLAY
+          if (_showWrongClickOverlay)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  color: Colors.red.withOpacity(0.2),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -262,75 +281,95 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
 
   Widget _buildGameArea(Size screenSize) {
     return InteractiveViewer(
+      minScale: 1.0,
       maxScale: 3.0,
       child: Container(
         width: screenSize.width,
         height: screenSize.height,
         child: Stack(
           children: [
-            // Background image
+            // BACKGROUND IMAGE
             Positioned.fill(
               child: Image.asset(
                 'assets/images/scene1.png',
-                // --- THIS IS THE FIX ---
-                fit: BoxFit.contain,
-                // --- END FIX ---
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.shade300,
-                    child: const Center(
-                      child: Text('Error: Could not load background.png'),
-                    ),
-                  );
-                },
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Container(color: Colors.grey, child: const Center(child: Text('Image not found'))),
               ),
             ),
 
-            // Responsive tap zone
-            Positioned(
-              top: level2Objects[_currentObjectIndex].top * screenSize.height,
-              left: level2Objects[_currentObjectIndex].left * screenSize.width,
-              width: level2Objects[_currentObjectIndex].width * screenSize.width,
-              height:
-              level2Objects[_currentObjectIndex].height * screenSize.height,
-              child: GestureDetector(
-                onTap: () => _onObjectTapped(_currentObjectIndex),
-                child: Container(
-                  // Set to 0 opacity for production
-                  decoration: BoxDecoration(
-                    color: Colors.yellow.withOpacity(0),
+            // --- NEW ---
+            // DEBUG MODE: Red overlay for the *entire screen*
+            if (_debugMode)
+              Positioned.fill(
+                child: IgnorePointer( // So it doesn't block taps
+                  child: Container(
+                    color: Colors.red.withOpacity(0.1),
                   ),
                 ),
               ),
-            ),
 
-            // Progress indicator at the top
+            // HITBOXES
+            ...List.generate(level2Objects.length, (index) {
+              final obj = level2Objects[index];
+              final isCurrentTarget = index == _currentObjectIndex;
+
+              return Positioned(
+                top: obj.top * screenSize.height,
+                left: obj.left * screenSize.width,
+                width: obj.width * screenSize.width,
+                height: obj.height * screenSize.height,
+                child: GestureDetector(
+                  onTap: () => _onObjectTapped(index),
+                  child: Container(
+                    // --- MODIFIED ---
+                    // Only show the GREEN box for the CURRENT target in debug mode
+                    // All other boxes (and all boxes in non-debug mode) are transparent
+                    decoration: BoxDecoration(
+                      border: _debugMode && isCurrentTarget
+                          ? Border.all(
+                        color: Colors.green,
+                        width: 2,
+                      )
+                          : null,
+                      color: _debugMode && isCurrentTarget
+                          ? Colors.green.withOpacity(0.3)
+                          : Colors.transparent,
+                    ),
+                  ),
+                ),
+              );
+            }),
+
+            // PROGRESS INDICATOR (The 5 Stages)
             Positioned(
               top: 20,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(level2Objects.length, (index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(
-                        index < _currentObjectIndex
-                            ? Icons.check_circle
-                            : Icons.circle_outlined,
-                        color: index < _currentObjectIndex
-                            ? Colors.green
-                            : Colors.white,
-                        size: 24,
-                      ),
-                    );
-                  }),
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(level2Objects.length, (index) {
+                        bool found = index < _currentObjectIndex;
+                        bool current = index == _currentObjectIndex;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            found ? Icons.check_circle : (current ? Icons.search : Icons.circle_outlined),
+                            color: found ? Colors.green : (current ? Colors.yellow : Colors.white54),
+                            size: 24,
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -342,42 +381,19 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
 
   Widget _buildCompletionScreen() {
     return Container(
-      color: Colors.black.withOpacity(0.8),
+      color: Colors.black.withOpacity(0.85),
       child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.celebration,
-              color: Colors.yellow,
-              size: 80,
-            ),
+            const Icon(Icons.emoji_events, color: Colors.yellow, size: 80),
             const SizedBox(height: 20),
-            const Text(
-              'Level Complete!',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'You found all ${level2Objects.length} objects!',
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white70,
-              ),
-            ),
+            const Text('Level Complete!', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: _completeLevel,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700,
-                minimumSize: const Size(200, 60),
-                textStyle: const TextStyle(fontSize: 20),
-              ),
-              child: const Text('Continue'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
+              child: const Text('Continue', style: TextStyle(fontSize: 20)),
             ),
           ],
         ),

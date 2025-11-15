@@ -3,7 +3,7 @@ import 'package:flutter/services.dart'; // Import this
 import 'package:provider/provider.dart';
 import 'level_screen.dart'; // This is the video-only screen
 import 'hidden_object_game_screen.dart'; // This is the new game screen
-
+import 'package:flutter/services.dart';
 // --- Define our App's Colors (Based on your image) ---
 const Color kPrimaryColor = Color(0xFFF58634); // The new bright orange
 const Color kPrimaryText = Color(0xFF3A3F51); // Dark blue/grey for header
@@ -13,9 +13,17 @@ const Color kLockedText = Color(0xFFB8BCCB); // Medium grey for locked text
 const Color kBackgroundColor = Color(0xFFFCFCFA); // The warm off-white background
 
 // 1. The main entry point for the app
-void main() {
-  // --- FIX: Removed the global orientation lock ---
+
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock to landscape only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => LevelProgress(),
@@ -23,6 +31,7 @@ void main() {
     ),
   );
 }
+
 
 // 2. The state management class (no change)
 class LevelProgress extends ChangeNotifier {
