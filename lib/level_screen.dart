@@ -48,7 +48,7 @@ final Map<int, List<LessonPageData>> levelData = {
 };
 // --- END MOCK DATA ---
 
-// LevelScreen (hosts PageView) - No changes
+// LevelScreen (hosts PageView)
 class LevelScreen extends StatefulWidget {
   final int level;
   const LevelScreen({Key? key, required this.level}) : super(key: key);
@@ -86,6 +86,18 @@ class _LevelScreenState extends State<LevelScreen> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeIn,
       );
+    } else {
+      // If on last page, complete the level
+      _completeLevel();
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeIn,
+      );
     }
   }
 
@@ -98,51 +110,138 @@ class _LevelScreenState extends State<LevelScreen> {
   @override
   Widget build(BuildContext context) {
     bool isLastPage = _currentPage == _lessons.length - 1;
+    bool isFirstPage = _currentPage == 0;
 
+    // Handle empty lessons case
     if (_lessons.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('Level ${widget.level}')),
-        body: const Center(
-          child: Text('Coming Soon!'),
+        body: Stack(
+          children: [
+            const Center(child: Text('Coming Soon!')),
+            Positioned(
+              top: 40,
+              left: 10,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                color: Colors.black,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-            'Level ${widget.level} - Page ${_currentPage + 1}/${_lessons.length}'),
-        backgroundColor: kBackgroundColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: kPrimaryText),
-        titleTextStyle: TextStyle(
-            color: kPrimaryText, fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      body: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        itemCount: _lessons.length,
-        itemBuilder: (context, index) {
-          return LessonPageWidget(lesson: _lessons[index]);
-        },
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ElevatedButton(
-          onPressed: isLastPage ? _completeLevel : _nextPage,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isLastPage ? Colors.green.shade700 : kPrimaryColor,
-            minimumSize: const Size(double.infinity, 50),
-          ),
-          child: Text(isLastPage ? 'Complete Level' : 'Next Page'),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Layer 1: The Content (PageView)
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              itemCount: _lessons.length,
+              itemBuilder: (context, index) {
+                return LessonPageWidget(lesson: _lessons[index]);
+              },
+            ),
+
+            // Layer 2: Custom Top-Left Back Button (To exit level)
+            Positioned(
+              top: 10,
+              left: 10,
+              child: InkWell(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                      )
+                    ],
+                  ),
+                  child: const Icon(Icons.arrow_back, color: Colors.black),
+                ),
+              ),
+            ),
+
+            // Layer 3: Left Navigation Arrow (<) - Vertically Centered
+            if (!isFirstPage)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: InkWell(
+                    onTap: _previousPage,
+                    child: Container(
+                      padding: const EdgeInsets.all(12), // Size of the button
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          )
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.chevron_left, // The < icon
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // Layer 4: Right Navigation Arrow (>) - Vertically Centered
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: InkWell(
+                  onTap: _nextPage,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      // Green on last page to indicate "Done", Orange otherwise
+                      color: isLastPage
+                          ? Colors.green.shade600
+                          : kPrimaryColor.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        )
+                      ],
+                    ),
+                    child: Icon(
+                      // Checkmark if last page, > if not
+                      isLastPage ? Icons.check : Icons.chevron_right,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+      // Bottom Navigation Bar is REMOVED
     );
   }
 }
 
-// --- 3. UPDATED Lesson Page Widget ---
-// This now controls the two-phase animation
+// --- 3. Lesson Page Widget (Unchanged from previous best version) ---
 class LessonPageWidget extends StatefulWidget {
   final LessonPageData lesson;
   const LessonPageWidget({Key? key, required this.lesson}) : super(key: key);
@@ -166,45 +265,28 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
   Future<void> _initializeVideo() async {
     try {
       _controller = VideoPlayerController.asset(widget.lesson.videoAsset);
-
-      // Initialize video
       await _controller.initialize();
-
       if (!mounted) return;
-
-      // Set up video playback
       _controller.setLooping(true);
       await _controller.setPlaybackSpeed(1.0);
       await _controller.play();
-
-      print(
-          'Video initialized: ${_controller.value.isInitialized}, playing: ${_controller.value.isPlaying}');
 
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error initializing video: $e');
       if (!mounted) return;
-
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = e.toString().contains('OutOfMemory')
-            ? 'Not enough memory to play video. Please restart the app.'
-            : 'Error loading video: ${e.toString()}';
+        _errorMessage = e.toString();
       });
     }
   }
 
   @override
   void dispose() {
-    try {
-      _controller.pause();
-      _controller.dispose();
-    } catch (e) {
-      print('Error disposing controller: $e');
-    }
+    _controller.dispose();
     super.dispose();
   }
 
@@ -216,109 +298,67 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
     }
 
     if (_hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      return Center(child: Text(_errorMessage.isEmpty ? 'Error' : _errorMessage));
+    }
+
+    // Get screen size to determine max video height
+    final size = MediaQuery.of(context).size;
+    final double maxVideoHeight = size.height * 0.75;
+
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: maxVideoHeight,
+          maxWidth: size.width * 0.90, // Leave space for side buttons
+        ),
+        child: AspectRatio(
+          aspectRatio: _controller.value.aspectRatio,
+          child: Stack(
+            alignment: Alignment.topRight,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text(
-                'Error Loading Video',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _errorMessage.isEmpty
-                    ? 'Unable to load video. This may be due to insufficient memory or missing video file.'
-                    : _errorMessage,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              // 1. The Video Player
+              Card(
+                elevation: 6,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
-                child: const Text('Go Back'),
+                child: VideoPlayer(_controller),
+              ),
+
+              // 2. The Small Image Overlay (Square)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      widget.lesson.imageAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.image, color: Colors.grey);
+                      },
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    // Simple centered layout with one video
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Video player card
-            Card(
-              elevation: 6,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              child: _controller.value.isInitialized
-                  ? AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
-                    )
-                  : Container(
-                      height: 300,
-                      decoration: const BoxDecoration(color: Colors.black),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    ),
-            ),
-            const SizedBox(height: 24),
-            // Object image
-            Card(
-              elevation: 4,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              child: SizedBox(
-                height: 200,
-                width: double.infinity,
-                child: Image.asset(
-                  widget.lesson.imageAsset,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Text('Image not found',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: kSecondaryText)),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Object name
-            Text(
-              widget.lesson.objectName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: kPrimaryText,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
       ),
     );
