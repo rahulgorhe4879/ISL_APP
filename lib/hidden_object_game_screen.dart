@@ -25,52 +25,57 @@ class HiddenObject {
 
 // --- DATA SETUP ---
 final List<HiddenObject> level2Objects = [
-  // 1. 'Ball' -> Mapped to Green Cabinet on left
+  // 1. Ball (bottom center-right near pots)
   HiddenObject(
     name: 'Ball',
     videoPath: 'assets/videos/ball.MOV',
-    top: 0.40,
-    left: 0.15,
-    width: 0.20,
-    height: 0.25,
+    top: 0.62,
+    left: 0.58,
+    width: 0.10,
+    height: 0.12,
   ),
-  // 2. 'Car' -> Mapped to Red Mantle
+
+  // 2. Car (inside fireplace)
   HiddenObject(
     name: 'Car',
     videoPath: 'assets/videos/car.MOV',
-    top: 0.40,
-    left: 0.45,
-    width: 0.15,
-    height: 0.15,
+    top: 0.58,
+    left: 0.46,
+    width: 0.12,
+    height: 0.12,
   ),
-  // 3. 'Boat' -> Mapped to Red Vase
+
+  // 3. Boat (inside upper decorative niche)
   HiddenObject(
     name: 'Boat',
     videoPath: 'assets/videos/boat.MOV',
-    top: 0.50,
-    left: 0.52,
-    width: 0.10,
-    height: 0.15,
+    top: 0.28,
+    left: 0.47,
+    width: 0.08,
+    height: 0.10,
   ),
-  // 4. 'Book' -> Mapped to Green Window
+
+  // 4. Book (on right bench)
   HiddenObject(
     name: 'Book',
     videoPath: 'assets/videos/book.MOV',
-    top: 0.30,
-    left: 0.65,
-    width: 0.15,
-    height: 0.25,
+    top: 0.63,
+    left: 0.83,
+    width: 0.08,
+    height: 0.10,
   ),
-  // 5. 'Bicycle' -> Mapped to Red Pillow
+
+  // 5. Bicycle (hanging on right wall)
   HiddenObject(
     name: 'Bicycle',
     videoPath: 'assets/videos/bicycle.MOV',
-    top: 0.55,
-    left: 0.70,
-    width: 0.20,
-    height: 0.15,
+    top: 0.30,
+    left: 0.72,
+    width: 0.18,
+    height: 0.18,
   ),
 ];
+
 
 class HiddenObjectGameScreen extends StatefulWidget {
   final int level;

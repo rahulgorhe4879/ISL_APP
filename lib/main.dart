@@ -35,7 +35,7 @@ void main() async {
 
 // 2. The state management class (no change)
 class LevelProgress extends ChangeNotifier {
-  int _unlockedLevel = 1; // <-- FIX: Set to 2 as requested
+  int _unlockedLevel = 2; // <-- FIX: Set to 2 as requested
   int get unlockedLevel => _unlockedLevel;
 
   void completeLevel(int level) {
