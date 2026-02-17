@@ -16,7 +16,7 @@ class HiddenObjectGameScreen extends StatefulWidget {
 class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
   VideoPlayerController? _videoController;
 
-  // STRICT ORDER: 1:Ball, 2:Car, 3:Dog, 4:Book, 5:Bicycle, 6:Boat, 7:Bag
+  // UPDATED SEQUENCE: 1:Ball, 2:Car, 3:Boat, 4:Book, 5:Bag
   int _currentStage = 1;
   bool _gameStarted = false;
   bool _isSearching = false;
@@ -27,9 +27,7 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
     _loadStageData();
   }
 
-  // Maps the current stage to your levelData indices
   LessonPageData? get _currentGameData {
-    // Ensure levelData[1] contains the objects in this specific order
     return levelData[1]?[_currentStage];
   }
 
@@ -44,7 +42,7 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
         ..initialize().then((_) {
           setState(() {
             _videoController!.play();
-            _videoController!.setLooping(true); // Loop so player can find it whenever
+            _videoController!.setLooping(true);
           });
         });
     }
@@ -66,7 +64,8 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
   }
 
   void _onObjectFound() {
-    if (_currentStage < 7) {
+    // Game now ends at stage 5 (Bag)
+    if (_currentStage < 5) {
       _showTransitionDialog();
     } else {
       _showWinDialog();
@@ -97,7 +96,7 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
               ),
             ),
 
-          // 3. Find Object Button (Visible immediately after video starts)
+          // 3. Find Object Button (Instant access)
           if (_gameStarted && !_isSearching)
             Align(
               alignment: Alignment.bottomCenter,
@@ -123,7 +122,7 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
                   child: Image.asset('assets/images/scene1.png', fit: BoxFit.cover),
                 ),
 
-                // THE INVISIBLE BUTTON
+                // THE INVISIBLE TARGET BUTTON
                 Positioned(
                   left: _getLeftCoordinate(context),
                   top: _getTopCoordinate(context),
@@ -132,14 +131,14 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
                     child: Container(
                       width: 110,
                       height: 110,
-                      color: Colors.transparent, // Toggle to red for testing
+                      color: Colors.transparent,
                     ),
                   ),
                 ),
               ],
             ),
 
-          // Back Button
+          // Navigation
           Positioned(
             top: 10, left: 10,
             child: IconButton(
@@ -152,17 +151,15 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
     );
   }
 
-  // COORDINATE MAPPING
+  // COORDINATE MAPPING FOR 5 STAGES
   double _getLeftCoordinate(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     switch (_currentStage) {
       case 1: return width * 0.58; // Ball
       case 2: return width * 0.45; // Car
-      case 3: return width * 0.12; // Dog
+      case 3: return width * 0.05; // Boat
       case 4: return width * 0.92; // Book
-      case 5: return width * 0.72; // Bicycle
-      case 6: return width * 0.05; // Boat
-      case 7: return width * 0.78; // Bag
+      case 5: return width * 0.78; // Bag (Final stage)
       default: return 0;
     }
   }
@@ -172,11 +169,9 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
     switch (_currentStage) {
       case 1: return height * 0.68; // Ball
       case 2: return height * 0.58; // Car
-      case 3: return height * 0.32; // Dog
+      case 3: return height * 0.72; // Boat
       case 4: return height * 0.82; // Book
-      case 5: return height * 0.25; // Bicycle
-      case 6: return height * 0.72; // Boat
-      case 7: return height * 0.58; // Bag
+      case 5: return height * 0.58; // Bag (Final stage)
       default: return 0;
     }
   }
@@ -210,7 +205,7 @@ class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Level Complete!'),
-        content: const Text('Amazing! You found all objects in the room!'),
+        content: const Text('Amazing! You found all the objects and finished the level!'),
         actions: [
           ElevatedButton(
             onPressed: () {
