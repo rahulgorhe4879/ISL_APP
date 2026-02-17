@@ -1,268 +1,113 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
-import 'level_screen.dart'; // This is the video-only screen
-import 'hidden_object_game_screen.dart'; // This is the new game screen
+import 'main.dart'; // IMPORTANT: Imports the 10 words and class types
 
-// --- Define our App's Colors (Based on your image) ---
-const Color kPrimaryColor = Color(0xFFF58634); // The new bright orange
-const Color kPrimaryText = Color(0xFF3A3F51); // Dark blue/grey for header
-const Color kSecondaryText = Color(0xFF7B7F8C); // Medium grey for subtitles
-const Color kLockedColor = Color(0xFFF0F0F0); // Light grey for locked buttons
-const Color kLockedText = Color(0xFFB8BCCB); // Medium grey for locked text
-const Color kBackgroundColor = Color(0xFFFCFCFA); // The warm off-white background
-
-// 1. The main entry point for the app
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => LevelProgress(),
-      child: const ISLApp(),
-    ),
-  );
+class LevelScreen extends StatefulWidget {
+  final int level;
+  const LevelScreen({Key? key, required this.level}) : super(key: key);
+  @override
+  _LevelScreenState createState() => _LevelScreenState();
 }
 
-// 2. The state management class (no change)
-class LevelProgress extends ChangeNotifier {
-  int _unlockedLevel = 1;
-  int get unlockedLevel => _unlockedLevel;
+class _LevelScreenState extends State<LevelScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  List<LessonPageData> _lessons = [];
 
-  void completeLevel(int level) {
-    if (level == _unlockedLevel) {
-      _unlockedLevel++;
-      notifyListeners();
-    }
+  @override
+  void initState() {
+    super.initState();
+    _lessons = levelData[widget.level] ?? [];
   }
-}
 
-// 3. The root widget of your application
-class ISLApp extends StatelessWidget {
-  const ISLApp({Key? key}) : super(key: key);
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ISL App',
-      theme: ThemeData(
-        // --- NEW: Updated Theme ---
-        primaryColor: kPrimaryColor,
-        scaffoldBackgroundColor: kBackgroundColor,
-        fontFamily: 'Roboto', // (Make sure to add this font to pubspec.yaml if you want)
-
-        // We are not using a default AppBar in the new design
-        appBarTheme: const AppBarTheme(
-          backgroundColor: kBackgroundColor, // Match background
-          elevation: 0,
-        ),
-
-        // New Button Theme
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kPrimaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+    if (_lessons.isEmpty) return const Scaffold(body: Center(child: Text('Coming Soon!')));
+    return Scaffold(
+      backgroundColor: const Color(0xFFFCFCFA),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: (page) => setState(() => _currentPage = page),
+              itemCount: _lessons.length,
+              itemBuilder: (context, index) => Padding(padding: const EdgeInsets.symmetric(horizontal: 20.0), child: LessonVideoCard(lesson: _lessons[index])),
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            Positioned(top: 10, left: 10, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context))),
+            if (_currentPage > 0)
+              Align(alignment: Alignment.centerLeft, child: IconButton(icon: const Icon(Icons.chevron_left, size: 48, color: Color(0xFFF58634)), onPressed: () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn))),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: Icon(_currentPage == _lessons.length - 1 ? Icons.check_circle : Icons.chevron_right, size: 48, color: _currentPage == _lessons.length - 1 ? Colors.green : const Color(0xFFF58634)),
+                onPressed: () {
+                  if (_currentPage < _lessons.length - 1) {
+                    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
+                  } else {
+                    Provider.of<LevelProgress>(context, listen: false).completeLevel(widget.level);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
             ),
-          ),
+          ],
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
       ),
-      home: const LevelSelectionScreen(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-// 4. The main screen with Level buttons
-class LevelSelectionScreen extends StatelessWidget {
-  const LevelSelectionScreen({Key? key}) : super(key: key);
-
-  final int totalLevels = 3;
-
+class LessonVideoCard extends StatefulWidget {
+  final LessonPageData lesson;
+  const LessonVideoCard({Key? key, required this.lesson}) : super(key: key);
   @override
-  Widget build(BuildContext context) {
-    return Consumer<LevelProgress>(
-      builder: (context, levelProgress, child) {
-        return Scaffold(
-          // No AppBar, we build the header into the body
-          body: SafeArea(
-            child: Padding(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-              child: Column(
-                children: [
-                  // --- NEW: Header from image ---
-                  const _AppHeader(),
-                  const SizedBox(height: 32),
-
-                  // --- NEW: List of buttons ---
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: totalLevels,
-                      itemBuilder: (context, index) {
-                        int levelNumber = index + 1;
-                        bool isLocked = levelNumber > levelProgress.unlockedLevel;
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: LevelButton(
-                            levelNumber: levelNumber,
-                            isLocked: isLocked,
-                            onPressed: () {
-                              Widget screenToOpen;
-                              switch (levelNumber) {
-                                case 1:
-                                  screenToOpen = LevelScreen(level: levelNumber);
-                                  break;
-                                case 2:
-                                  screenToOpen = HiddenObjectGameScreen(
-                                      level: levelNumber);
-                                  break;
-                                default:
-                                  screenToOpen = LevelScreen(level: levelNumber);
-                              }
-
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => screenToOpen,
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // --- NEW: Footer text ---
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Complete each level to unlock the next',
-                    style: TextStyle(
-                      color: kSecondaryText,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  _LessonVideoCardState createState() => _LessonVideoCardState();
 }
 
-// --- NEW: Header Widget ---
-class _AppHeader extends StatelessWidget {
-  const _AppHeader({Key? key}) : super(key: key);
+class _LessonVideoCardState extends State<LessonVideoCard> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // The book icon
-            Icon(
-              Icons.menu_book, // Using a standard icon
-              color: kPrimaryText,
-              size: 32,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'ISL App',
-              style: TextStyle(
-                color: kPrimaryText,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Learn Indian Sign Language step by step',
-          style: TextStyle(
-            color: kSecondaryText,
-            fontSize: 16,
-          ),
-        ),
-      ],
-    );
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset(widget.lesson.videoAsset)
+      ..initialize().then((_) {
+        setState(() {
+          _isInitialized = true;
+          _controller.setLooping(true);
+          _controller.play();
+        });
+      });
   }
-}
 
-// 5. A custom widget for the Level Button
-class LevelButton extends StatelessWidget {
-  final int levelNumber;
-  final bool isLocked;
-  final VoidCallback onPressed;
-
-  const LevelButton({
-    Key? key,
-    required this.levelNumber,
-    required this.isLocked,
-    required this.onPressed,
-  }) : super(key: key);
+  @override
+  void dispose() { _controller.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    // --- NEW: Completely restyled button to match image ---
-    Color buttonColor = isLocked ? kLockedColor : kPrimaryColor;
-    Color iconColor = isLocked ? kLockedText : Colors.white;
-    Color levelTextColor = isLocked ? kLockedText : Colors.white;
-    Color subtitleTextColor =
-    isLocked ? kLockedText : Colors.white.withOpacity(0.8);
-    IconData icon = isLocked ? Icons.lock_outline : Icons.play_arrow; // Changed lock icon
-    String subtitle = isLocked ? 'Locked' : 'Start Learning';
-
-    return InkWell(
-      onTap: isLocked ? null : onPressed, // Disable tap if locked
-      borderRadius: BorderRadius.circular(16),
+    if (!_isInitialized) return const Center(child: CircularProgressIndicator());
+    return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        decoration: BoxDecoration(
-            color: buttonColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: isLocked
-                ? []
-                : [
-              // Add shadow only if unlocked
-              BoxShadow(
-                color: kPrimaryColor.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              )
-            ]),
-        child: Column(
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              'Level $levelNumber',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: levelTextColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w300,
-                color: subtitleTextColor,
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey.withOpacity(0.3), width: 2)),
+        child: AspectRatio(
+          aspectRatio: _controller.value.aspectRatio,
+          child: Stack(
+            alignment: Alignment.topRight,
+            children: [
+              ClipRRect(borderRadius: BorderRadius.circular(16), child: VideoPlayer(_controller)),
+              Positioned(top: 15, right: 15, child: Container(width: 85, height: 85, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.orange, width: 2), borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(6.0), child: Image.asset(widget.lesson.imageAsset)))),
+            ],
+          ),
         ),
       ),
     );
