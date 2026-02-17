@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
-import 'main.dart'; // To access LevelProgress and colors
+import 'main.dart';
 
-// --- 1. Simplified Data Structure ---
 class LessonPageData {
   final String videoAsset;
   final String imageAsset;
@@ -16,39 +15,23 @@ class LessonPageData {
   });
 }
 
-// --- 2. Lesson Data ---
+// --- UPDATED DATA WITH NEW ASSETS ---
 final Map<int, List<LessonPageData>> levelData = {
   1: [
-    LessonPageData(
-      videoAsset: 'assets/videos/ball.MOV',
-      imageAsset: 'assets/images/ball.png',
-      objectName: 'Ball',
-    ),
-    LessonPageData(
-      videoAsset: 'assets/videos/car.MOV',
-      imageAsset: 'assets/images/car.png',
-      objectName: 'Car',
-    ),
-    LessonPageData(
-      videoAsset: 'assets/videos/boat.MOV',
-      imageAsset: 'assets/images/boat.png',
-      objectName: 'Boat',
-    ),
-    LessonPageData(
-      videoAsset: 'assets/videos/book.MOV',
-      imageAsset: 'assets/images/book.png',
-      objectName: 'Book',
-    ),
-    LessonPageData(
-      videoAsset: 'assets/videos/bicycle.MOV',
-      imageAsset: 'assets/images/bicycle.png',
-      objectName: 'Bicycle',
-    ),
+    LessonPageData(videoAsset: 'assets/videos/bicycle.MOV', imageAsset: 'assets/images/bicycle.png', objectName: 'Bicycle'),
+    LessonPageData(videoAsset: 'assets/videos/ball.MOV', imageAsset: 'assets/images/ball.png', objectName: 'Ball'),
+    LessonPageData(videoAsset: 'assets/videos/car.MOV', imageAsset: 'assets/images/car.png', objectName: 'Car'),
+    LessonPageData(videoAsset: 'assets/videos/boat.MOV', imageAsset: 'assets/images/boat.png', objectName: 'Boat'),
+    LessonPageData(videoAsset: 'assets/videos/book.MOV', imageAsset: 'assets/images/book.png', objectName: 'Book'),
+    // NEW ITEMS ADDED BELOW
+    LessonPageData(videoAsset: 'assets/videos/bag.MOV', imageAsset: 'assets/images/bag.png', objectName: 'Bag'),
+    LessonPageData(videoAsset: 'assets/videos/clock.MOV', imageAsset: 'assets/images/clock.png', objectName: 'Clock'),
+    LessonPageData(videoAsset: 'assets/videos/dog.MOV', imageAsset: 'assets/images/dog.png', objectName: 'Dog'),
+    LessonPageData(videoAsset: 'assets/videos/fish.MOV', imageAsset: 'assets/images/fish.png', objectName: 'Fish'),
+    LessonPageData(videoAsset: 'assets/videos/table.MOV', imageAsset: 'assets/images/table.png', objectName: 'Table'),
   ],
 };
-// --- END MOCK DATA ---
 
-// LevelScreen (hosts PageView)
 class LevelScreen extends StatefulWidget {
   final int level;
   const LevelScreen({Key? key, required this.level}) : super(key: key);
@@ -60,12 +43,18 @@ class LevelScreen extends StatefulWidget {
 class _LevelScreenState extends State<LevelScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  List<LessonPageData> _lessons = [];
+  List<List<LessonPageData>> _lessonPairs = [];
 
   @override
   void initState() {
     super.initState();
-    _lessons = levelData[widget.level] ?? [];
+    List<LessonPageData> rawLessons = levelData[widget.level] ?? [];
+    // Group lessons into pairs for side-by-side display
+    for (var i = 0; i < rawLessons.length; i += 2) {
+      _lessonPairs.add(
+          rawLessons.sublist(i, i + 2 > rawLessons.length ? rawLessons.length : i + 2)
+      );
+    }
   }
 
   @override
@@ -74,214 +63,97 @@ class _LevelScreenState extends State<LevelScreen> {
     super.dispose();
   }
 
-  void _onPageChanged(int page) {
-    setState(() {
-      _currentPage = page;
-    });
-  }
-
-  void _nextPage() {
-    if (_currentPage < _lessons.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeIn,
-      );
-    } else {
-      // If on last page, complete the level
-      _completeLevel();
-    }
-  }
-
-  void _previousPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeIn,
-      );
-    }
-  }
-
-  void _completeLevel() {
-    Provider.of<LevelProgress>(context, listen: false)
-        .completeLevel(widget.level);
-    Navigator.pop(context);
-  }
-
   @override
   Widget build(BuildContext context) {
-    bool isLastPage = _currentPage == _lessons.length - 1;
-    bool isFirstPage = _currentPage == 0;
-
-    // Handle empty lessons case
-    if (_lessons.isEmpty) {
-      return Scaffold(
-        body: Stack(
-          children: [
-            const Center(child: Text('Coming Soon!')),
-            Positioned(
-              top: 40,
-              left: 10,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                color: Colors.black,
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    if (_lessonPairs.isEmpty) return const Scaffold(body: Center(child: Text('Coming Soon!')));
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFCFCFA),
       body: SafeArea(
         child: Stack(
           children: [
-            // Layer 1: The Content (PageView)
             PageView.builder(
               controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: _lessons.length,
+              onPageChanged: (page) => setState(() => _currentPage = page),
+              itemCount: _lessonPairs.length,
               itemBuilder: (context, index) {
-                return LessonPageWidget(lesson: _lessons[index]);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                  child: Row(
+                    children: _lessonPairs[index].map((lesson) => Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: LessonVideoCard(lesson: lesson),
+                      ),
+                    )).toList(),
+                  ),
+                );
               },
             ),
-
-            // Layer 2: Custom Top-Left Back Button (To exit level)
+            // UI Controls
             Positioned(
-              top: 10,
-              left: 10,
-              child: InkWell(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                      )
-                    ],
-                  ),
-                  child: const Icon(Icons.arrow_back, color: Colors.black),
-                ),
+              top: 10, left: 10,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
-
-            // Layer 3: Left Navigation Arrow (<) - Vertically Centered
-            if (!isFirstPage)
+            if (_currentPage > 0)
               Align(
                 alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
-                  child: InkWell(
-                    onTap: _previousPage,
-                    child: Container(
-                      padding: const EdgeInsets.all(12), // Size of the button
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withOpacity(0.9),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left, // The < icon
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                  ),
+                child: IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 48, color: Color(0xFFF58634)),
+                  onPressed: () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn),
                 ),
               ),
-
-            // Layer 4: Right Navigation Arrow (>) - Vertically Centered
             Align(
               alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: InkWell(
-                  onTap: _nextPage,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      // Green on last page to indicate "Done", Orange otherwise
-                      color: isLastPage
-                          ? Colors.green.shade600
-                          : kPrimaryColor.withOpacity(0.9),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
-                    ),
-                    child: Icon(
-                      // Checkmark if last page, > if not
-                      isLastPage ? Icons.check : Icons.chevron_right,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
+              child: IconButton(
+                icon: Icon(
+                  _currentPage == _lessonPairs.length - 1 ? Icons.check_circle : Icons.chevron_right,
+                  size: 48,
+                  color: _currentPage == _lessonPairs.length - 1 ? Colors.green : const Color(0xFFF58634),
                 ),
+                onPressed: () {
+                  if (_currentPage < _lessonPairs.length - 1) {
+                    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
+                  } else {
+                    Provider.of<LevelProgress>(context, listen: false).completeLevel(widget.level);
+                    Navigator.pop(context);
+                  }
+                },
               ),
             ),
           ],
         ),
       ),
-      // Bottom Navigation Bar is REMOVED
     );
   }
 }
 
-// --- 3. Lesson Page Widget (Unchanged from previous best version) ---
-class LessonPageWidget extends StatefulWidget {
+class LessonVideoCard extends StatefulWidget {
   final LessonPageData lesson;
-  const LessonPageWidget({Key? key, required this.lesson}) : super(key: key);
+  const LessonVideoCard({Key? key, required this.lesson}) : super(key: key);
 
   @override
-  _LessonPageWidgetState createState() => _LessonPageWidgetState();
+  _LessonVideoCardState createState() => _LessonVideoCardState();
 }
 
-class _LessonPageWidgetState extends State<LessonPageWidget> {
+class _LessonVideoCardState extends State<LessonVideoCard> {
   late VideoPlayerController _controller;
-  bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideo();
-  }
-
-  Future<void> _initializeVideo() async {
-    try {
-      _controller = VideoPlayerController.asset(widget.lesson.videoAsset);
-      await _controller.initialize();
-      if (!mounted) return;
-      _controller.setLooping(true);
-      await _controller.setPlaybackSpeed(1.0);
-      await _controller.play();
-
-      setState(() {
-        _isLoading = false;
+    _controller = VideoPlayerController.asset(widget.lesson.videoAsset)
+      ..initialize().then((_) {
+        setState(() {
+          _isInitialized = true;
+          _controller.setLooping(true);
+          _controller.play();
+        });
       });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        _errorMessage = e.toString();
-      });
-    }
   }
 
   @override
@@ -292,75 +164,45 @@ class _LessonPageWidgetState extends State<LessonPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: kPrimaryColor));
-    }
+    if (!_isInitialized) return const Center(child: CircularProgressIndicator());
 
-    if (_hasError) {
-      return Center(child: Text(_errorMessage.isEmpty ? 'Error' : _errorMessage));
-    }
-
-    // Get screen size to determine max video height
-    final size = MediaQuery.of(context).size;
-    final double maxVideoHeight = size.height * 0.75;
-
-    return Center(
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: maxVideoHeight,
-          maxWidth: size.width * 0.90, // Leave space for side buttons
-        ),
-        child: AspectRatio(
-          aspectRatio: _controller.value.aspectRatio,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(widget.lesson.objectName,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF3A3F51))),
+        const SizedBox(height: 10),
+        // Flexible prevents the video from pushing off the screen and causing overflow
+        Flexible(
           child: Stack(
             alignment: Alignment.topRight,
             children: [
-              // 1. The Video Player
-              Card(
-                elevation: 6,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
                 ),
-                child: VideoPlayer(_controller),
               ),
-
-              // 2. The Small Image Overlay (Square)
               Positioned(
-                top: 12,
-                right: 12,
+                top: 12, right: 12,
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: 60, height: 60,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      widget.lesson.imageAsset,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.image, color: Colors.grey);
-                      },
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Image.asset(widget.lesson.imageAsset),
                   ),
                 ),
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
