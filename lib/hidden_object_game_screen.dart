@@ -6,98 +6,430 @@ import 'main.dart';
 
 class HiddenObjectGameScreen extends StatefulWidget {
   final int level;
-  const HiddenObjectGameScreen({Key? key, required this.level}) : super(key: key);
+
+  const HiddenObjectGameScreen({
+    Key? key,
+    required this.level,
+  }) : super(key: key);
+
   @override
-  _HiddenObjectGameScreenState createState() => _HiddenObjectGameScreenState();
+  _HiddenObjectGameScreenState createState() =>
+      _HiddenObjectGameScreenState();
 }
 
-class _HiddenObjectGameScreenState extends State<HiddenObjectGameScreen> {
+class _HiddenObjectGameScreenState
+    extends State<HiddenObjectGameScreen> {
   VideoPlayerController? _videoController;
-  int _currentStage = 0; // Starts at 0 (Ball)
+
+  int _currentStage = 0;
   bool _gameStarted = false;
   bool _isSearching = false;
+  bool _showCorrectOverlay = false;
+  bool _showWrongOverlay = false;
 
   @override
-  void initState() { super.initState(); _loadStageData(); }
+  void initState() {
+    super.initState();
+    _loadStageData();
+  }
 
   LessonPageData? get _currentGameData {
-    // Stage logic mapping specifically to Level 1 data list indices
-    // index 1=Ball, 2=Car, 3=Boat, 4=Book, 5=Bag
     int dataIndex = _currentStage + 1;
-    List<LessonPageData>? currentLevelLessons = levelData[1];
-    return (currentLevelLessons != null && dataIndex < currentLevelLessons.length)
-        ? currentLevelLessons[dataIndex] : null;
+    List<LessonPageData>? currentLevelLessons =
+    levelData[1];
+
+    return (currentLevelLessons != null &&
+        dataIndex <
+            currentLevelLessons.length)
+        ? currentLevelLessons[dataIndex]
+        : null;
   }
 
   void _loadStageData() {
-    setState(() => _isSearching = false);
+    setState(() {
+      _isSearching = false;
+      _showCorrectOverlay = false;
+    });
+
     _videoController?.dispose();
+
     final data = _currentGameData;
+
     if (data != null) {
-      _videoController = VideoPlayerController.asset(data.videoAsset)..initialize().then((_) {
-        setState(() { _videoController!.play(); _videoController!.setLooping(true); });
-      });
+      _videoController =
+      VideoPlayerController.asset(
+          data.videoAsset)
+        ..initialize().then((_) {
+          if (!mounted) return;
+
+          setState(() {
+            _videoController!
+                .setLooping(true);
+            _videoController!.play();
+          });
+        });
     }
   }
 
-  void _stopVideoAndSearch() { _videoController?.pause(); setState(() => _isSearching = true); }
-
-  @override
-  void dispose() { _videoController?.dispose(); super.dispose(); }
+  void _enterSearchMode() {
+    _videoController?.pause();
+    setState(() {
+      _isSearching = true;
+    });
+  }
 
   void _onObjectFound() {
-    if (_currentStage < 4) { // Finish after Stage 4 (Bag)
-      _showTransitionDialog();
-    } else {
-      _showWinDialog();
+    final progress =
+    Provider.of<LevelProgress>(
+        context,
+        listen: false);
+
+    progress.addHeart(); // ❤️ +1
+
+    setState(() {
+      _showCorrectOverlay = true;
+    });
+
+    Future.delayed(
+        const Duration(seconds: 1), () {
+      if (_currentStage < 4) {
+        setState(() {
+          _currentStage++;
+          _loadStageData();
+        });
+      } else {
+        _showWinDialog();
+      }
+    });
+  }
+
+  void _onWrongTap() {
+    final progress =
+    Provider.of<LevelProgress>(
+        context,
+        listen: false);
+
+    progress.removeHeart(); // 💔 -1
+
+    setState(() {
+      _showWrongOverlay = true;
+    });
+
+    Future.delayed(
+        const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() {
+          _showWrongOverlay = false;
+        });
+      }
+    });
+
+    if (progress.hearts == 0) {
+      progress.lockLevel(2);
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+              "No hearts left! Level 2 locked."),
+        ),
+      );
+
+      Navigator.pop(context);
     }
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final hearts =
+        Provider.of<LevelProgress>(context)
+            .hearts;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (!_gameStarted) Center(child: ElevatedButton(onPressed: () => setState(() => _gameStarted = true), child: const Text('Start Level 2 Game', style: TextStyle(fontSize: 24)))),
-          if (_gameStarted && !_isSearching && _videoController != null) Center(child: AspectRatio(aspectRatio: _videoController!.value.aspectRatio, child: VideoPlayer(_videoController!))),
-          if (_gameStarted && !_isSearching) Align(alignment: Alignment.bottomCenter, child: Padding(padding: const EdgeInsets.all(40.0), child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), onPressed: _stopVideoAndSearch, child: const Text('FIND THE OBJECT', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))))),
-          if (_isSearching) Stack(children: [Positioned.fill(child: Image.asset('assets/images/scene1.png', fit: BoxFit.cover)), Positioned(left: _getLeftCoordinate(context), top: _getTopCoordinate(context), child: GestureDetector(onTap: _onObjectFound, child: Container(width: 110, height: 110, color: Colors.transparent)))]),
-          Positioned(top: 10, left: 10, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context))),
+
+          // ❤️ HEART DISPLAY (ALWAYS VISIBLE)
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.favorite,
+                  color: Colors.red,
+                  size: 28,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$hearts',
+                  style:
+                  const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
+                )
+              ],
+            ),
+          ),
+
+          // START BUTTON
+          if (!_gameStarted)
+            Center(
+              child: ElevatedButton(
+                onPressed: () =>
+                    setState(() =>
+                    _gameStarted =
+                    true),
+                child: const Text(
+                  'Start Game',
+                  style: TextStyle(
+                      fontSize: 24),
+                ),
+              ),
+            ),
+
+          // VIDEO MODE
+          if (_gameStarted &&
+              !_isSearching &&
+              _videoController != null)
+            Stack(
+              children: [
+                Center(
+                  child: AspectRatio(
+                    aspectRatio:
+                    _videoController!
+                        .value.aspectRatio,
+                    child: VideoPlayer(
+                        _videoController!),
+                  ),
+                ),
+
+                Positioned(
+                  bottom: 40,
+                  right: 40,
+                  child: GestureDetector(
+                    onTap:
+                    _enterSearchMode,
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration:
+                      const BoxDecoration(
+                        color:
+                        Colors.green,
+                        shape: BoxShape
+                            .circle,
+                      ),
+                      child:
+                      const Icon(
+                        Icons.check,
+                        color: Colors
+                            .white,
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+          // SEARCH MODE
+          if (_isSearching)
+            GestureDetector(
+              onTap:
+              _onWrongTap, // Tap anywhere = wrong
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/images/scene1.png',
+                      fit:
+                      BoxFit.cover,
+                    ),
+                  ),
+
+                  // CORRECT TAP AREA
+                  Positioned(
+                    left:
+                    _getLeftCoordinate(
+                        context),
+                    top:
+                    _getTopCoordinate(
+                        context),
+                    child:
+                    GestureDetector(
+                      onTap:
+                      _onObjectFound,
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        color: Colors
+                            .transparent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // CORRECT OVERLAY
+          if (_showCorrectOverlay)
+            Container(
+              color: Colors.black54,
+              child:
+              const Center(
+                child: Text(
+                  "✔ CORRECT!",
+                  style: TextStyle(
+                    color:
+                    Colors.green,
+                    fontSize: 50,
+                    fontWeight:
+                    FontWeight
+                        .bold,
+                  ),
+                ),
+              ),
+            ),
+
+          // WRONG OVERLAY
+          if (_showWrongOverlay)
+            Center(
+              child: Container(
+                padding:
+                const EdgeInsets
+                    .all(20),
+                decoration:
+                BoxDecoration(
+                  color:
+                  Colors.black87,
+                  borderRadius:
+                  BorderRadius
+                      .circular(12),
+                ),
+                child: const Text(
+                  "-1 ❤️ Wrong!",
+                  style: TextStyle(
+                    color:
+                    Colors.red,
+                    fontSize: 28,
+                    fontWeight:
+                    FontWeight
+                        .bold,
+                  ),
+                ),
+              ),
+            ),
+
+          // BACK BUTTON
+          Positioned(
+            top: 10,
+            left: 10,
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back,
+                color:
+                Colors.white,
+              ),
+              onPressed: () =>
+                  Navigator.pop(
+                      context),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  double _getLeftCoordinate(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+  // ORIGINAL COORDINATES
+
+  double _getLeftCoordinate(
+      BuildContext context) {
+    final width =
+        MediaQuery.of(context)
+            .size
+            .width;
+
     switch (_currentStage) {
-      case 0: return width * 0.58; // Ball
-      case 1: return width * 0.45; // Car
-      case 2: return width * 0.05; // Boat
-      case 3: return width * 0.92; // Book
-      case 4: return width * 0.78; // Bag
-      default: return 0;
+      case 0:
+        return width * 0.58;
+      case 1:
+        return width * 0.45;
+      case 2:
+        return width * 0.05;
+      case 3:
+        return width * 0.92;
+      case 4:
+        return width * 0.78;
+      default:
+        return 0;
     }
   }
 
-  double _getTopCoordinate(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    switch (_currentStage) {
-      case 0: return height * 0.68; // Ball
-      case 1: return height * 0.58; // Car
-      case 2: return height * 0.72; // Boat
-      case 3: return height * 0.82; // Book
-      case 4: return height * 0.58; // Bag
-      default: return 0;
-    }
-  }
+  double _getTopCoordinate(
+      BuildContext context) {
+    final height =
+        MediaQuery.of(context)
+            .size
+            .height;
 
-  void _showTransitionDialog() {
-    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(title: const Text('Great Job!'), content: const Text('You found it! Ready for the next object?'), actions: [ElevatedButton(onPressed: () { Navigator.pop(context); setState(() { _currentStage++; _loadStageData(); }); }, child: const Text('Continue'))]));
+    switch (_currentStage) {
+      case 0:
+        return height * 0.68;
+      case 1:
+        return height * 0.58;
+      case 2:
+        return height * 0.72;
+      case 3:
+        return height * 0.82;
+      case 4:
+        return height * 0.58;
+      default:
+        return 0;
+    }
   }
 
   void _showWinDialog() {
-    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(title: const Text('Level Complete!'), content: const Text('Amazing! You found all the objects!'), actions: [ElevatedButton(onPressed: () { Provider.of<LevelProgress>(context, listen: false).completeLevel(2); Navigator.pop(context); Navigator.pop(context); }, child: const Text('Finish'))]));
+    showDialog(
+      context: context,
+      barrierDismissible:
+      false,
+      builder: (context) =>
+          AlertDialog(
+            title: const Text(
+                'Level Complete!'),
+            content: const Text(
+                'Amazing! You found all the objects!'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Provider.of<
+                      LevelProgress>(
+                      context,
+                      listen:
+                      false)
+                      .completeLevel(
+                      2);
+                  Navigator.pop(
+                      context);
+                  Navigator.pop(
+                      context);
+                },
+                child:
+                const Text('Finish'),
+              )
+            ],
+          ),
+    );
   }
 }
