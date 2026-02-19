@@ -18,7 +18,9 @@ class HiddenObjectGameScreen extends StatefulWidget {
 }
 
 class _HiddenObjectGameScreenState
-    extends State<HiddenObjectGameScreen> {
+    extends State<HiddenObjectGameScreen>
+    with SingleTickerProviderStateMixin {
+
   VideoPlayerController? _videoController;
 
   int _currentStage = 0;
@@ -27,10 +29,35 @@ class _HiddenObjectGameScreenState
   bool _showCorrectOverlay = false;
   bool _showWrongOverlay = false;
 
+  late AnimationController _heartAnimController;
+  late Animation<double> _floatAnimation;
+  late Animation<double> _fadeAnimation;
+
+  String _heartText = "";
+  Color _heartColor = Colors.green;
+
   @override
   void initState() {
     super.initState();
+
     _loadStageData();
+
+    _heartAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _floatAnimation = Tween<double>(begin: 0, end: -40)
+        .animate(CurvedAnimation(
+      parent: _heartAnimController,
+      curve: Curves.easeOut,
+    ));
+
+    _fadeAnimation = Tween<double>(begin: 1, end: 0)
+        .animate(CurvedAnimation(
+      parent: _heartAnimController,
+      curve: Curves.easeOut,
+    ));
   }
 
   LessonPageData? get _currentGameData {
@@ -78,15 +105,25 @@ class _HiddenObjectGameScreenState
     });
   }
 
+  void _playHeartAnimation(String text, Color color) {
+    setState(() {
+      _heartText = text;
+      _heartColor = color;
+    });
+
+    _heartAnimController.forward(from: 0);
+  }
+
   void _onObjectFound() {
     final progress =
     Provider.of<LevelProgress>(
         context,
         listen: false);
 
-    progress.addHeart(); // ❤️ +1
-    progress.incrementLevelProgress(
-        2); // 🔥 TRACK PROGRESS
+    progress.addHeart();
+    progress.incrementLevelProgress(2);
+
+    _playHeartAnimation("+1 ❤️", Colors.green);
 
     setState(() {
       _showCorrectOverlay = true;
@@ -113,7 +150,9 @@ class _HiddenObjectGameScreenState
         context,
         listen: false);
 
-    progress.removeHeart(); // 💔 -1
+    progress.removeHeart();
+
+    _playHeartAnimation("-1 ❤️", Colors.red);
 
     setState(() {
       _showWrongOverlay = true;
@@ -130,15 +169,6 @@ class _HiddenObjectGameScreenState
 
     if (progress.hearts == 0) {
       progress.lockLevel(2);
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-              "No hearts left! Level 2 locked."),
-        ),
-      );
-
       Navigator.pop(context);
     }
   }
@@ -146,6 +176,7 @@ class _HiddenObjectGameScreenState
   @override
   void dispose() {
     _videoController?.dispose();
+    _heartAnimController.dispose();
     super.dispose();
   }
 
@@ -160,17 +191,15 @@ class _HiddenObjectGameScreenState
       body: Stack(
         children: [
 
-          // ❤️ HEART DISPLAY
+          // ❤️ HEART COUNTER
           Positioned(
             top: 20,
             right: 20,
             child: Row(
               children: [
-                const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
-                  size: 28,
-                ),
+                const Icon(Icons.favorite,
+                    color: Colors.red,
+                    size: 28),
                 const SizedBox(width: 6),
                 Text(
                   '$hearts',
@@ -183,6 +212,34 @@ class _HiddenObjectGameScreenState
                   ),
                 )
               ],
+            ),
+          ),
+
+          // 💫 FLOATING HEART ANIMATION
+          Positioned(
+            top: 50,
+            right: 20,
+            child: AnimatedBuilder(
+              animation: _heartAnimController,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Transform.translate(
+                    offset: Offset(
+                        0,
+                        _floatAnimation.value),
+                    child: Text(
+                      _heartText,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight:
+                        FontWeight.bold,
+                        color: _heartColor,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -247,7 +304,6 @@ class _HiddenObjectGameScreenState
               ],
             ),
 
-          // SEARCH MODE
           if (_isSearching)
             GestureDetector(
               onTap:
@@ -283,70 +339,6 @@ class _HiddenObjectGameScreenState
                 ],
               ),
             ),
-
-          // CORRECT OVERLAY
-          if (_showCorrectOverlay)
-            Container(
-              color: Colors.black54,
-              child:
-              const Center(
-                child: Text(
-                  "✔ CORRECT!",
-                  style: TextStyle(
-                    color:
-                    Colors.green,
-                    fontSize: 50,
-                    fontWeight:
-                    FontWeight
-                        .bold,
-                  ),
-                ),
-              ),
-            ),
-
-          // WRONG OVERLAY
-          if (_showWrongOverlay)
-            Center(
-              child: Container(
-                padding:
-                const EdgeInsets
-                    .all(20),
-                decoration:
-                BoxDecoration(
-                  color:
-                  Colors.black87,
-                  borderRadius:
-                  BorderRadius
-                      .circular(12),
-                ),
-                child: const Text(
-                  "-1 ❤️ Wrong!",
-                  style: TextStyle(
-                    color:
-                    Colors.red,
-                    fontSize: 28,
-                    fontWeight:
-                    FontWeight
-                        .bold,
-                  ),
-                ),
-              ),
-            ),
-
-          Positioned(
-            top: 10,
-            left: 10,
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back,
-                color:
-                Colors.white,
-              ),
-              onPressed: () =>
-                  Navigator.pop(
-                      context),
-            ),
-          ),
         ],
       ),
     );
@@ -401,8 +393,7 @@ class _HiddenObjectGameScreenState
   void _showWinDialog() {
     showDialog(
       context: context,
-      barrierDismissible:
-      false,
+      barrierDismissible: false,
       builder: (context) =>
           AlertDialog(
             title:
