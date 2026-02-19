@@ -45,7 +45,6 @@ class LevelProgress extends ChangeNotifier {
   int _unlockedLevel = 1;
   int _hearts = 0;
   bool _isDarkMode = false;
-
   final Map<int, int> _levelCompletionCount = {};
 
   int get unlockedLevel => _unlockedLevel;
@@ -118,7 +117,7 @@ class ISLApp extends StatelessWidget {
   }
 }
 
-// ---------------- LEVEL SELECTION ----------------
+// ---------------- LEVEL SCREEN ----------------
 
 class LevelSelectionScreen extends StatelessWidget {
   const LevelSelectionScreen({super.key});
@@ -135,8 +134,8 @@ class LevelSelectionScreen extends StatelessWidget {
               gradient: isDark
                   ? const LinearGradient(
                 colors: [
-                  Color(0xFF0F172A),
-                  Color(0xFF1E293B),
+                  Color(0xFF1E293B), // lighter navy
+                  Color(0xFF334155), // slate blue
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -157,42 +156,47 @@ class LevelSelectionScreen extends StatelessWidget {
                   // HEADER
                   Container(
                     margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     decoration: BoxDecoration(
-                      color:
-                      isDark ? Colors.black54 : Colors.white,
-                      borderRadius:
-                      BorderRadius.circular(25),
+                      color: isDark ? Colors.black45 : Colors.white,
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     child: Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+
+                        // Hearts
                         Row(
                           children: [
-                            const Icon(Icons.favorite,
-                                color: Colors.red),
+                            const Icon(Icons.favorite, color: Colors.red),
                             const SizedBox(width: 6),
                             Text(
                               "${progress.hearts}",
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : Colors.black,
+                                fontSize: 18,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                           ],
                         ),
-                        const Text("ISL App"),
+
+                        // BIGGER TITLE
+                        Text(
+                          "ISL App",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+
                         IconButton(
                           icon: Icon(
-                            isDark
-                                ? Icons.light_mode
-                                : Icons.dark_mode,
+                            isDark ? Icons.light_mode : Icons.dark_mode,
+                            color: isDark ? Colors.yellow : Colors.black,
                           ),
-                          onPressed: () =>
-                              progress.toggleTheme(),
+                          onPressed: () => progress.toggleTheme(),
                         )
                       ],
                     ),
@@ -200,19 +204,14 @@ class LevelSelectionScreen extends StatelessWidget {
 
                   Expanded(
                     child: Padding(
-                      padding:
-                      const EdgeInsets.symmetric(
-                          horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
-                          _buildLevelCard(
-                              context, 1, progress, isDark),
+                          _buildLevelCard(context, 1, progress, isDark),
                           const SizedBox(height: 20),
-                          _buildLevelCard(
-                              context, 2, progress, isDark),
+                          _buildLevelCard(context, 2, progress, isDark),
                           const SizedBox(height: 20),
-                          _buildLevelCard(
-                              context, 3, progress, isDark),
+                          _buildLevelCard(context, 3, progress, isDark),
                         ],
                       ),
                     ),
@@ -246,39 +245,28 @@ class LevelSelectionScreen extends StatelessWidget {
             ? null
             : () {
           Widget screen = (level == 2)
-              ? HiddenObjectGameScreen(
-              level: level)
+              ? HiddenObjectGameScreen(level: level)
               : LevelScreen(level: level);
 
           Navigator.push(
             context,
-            MaterialPageRoute(
-                builder: (_) => screen),
+            MaterialPageRoute(builder: (_) => screen),
           );
         },
         child: Container(
           decoration: BoxDecoration(
-            borderRadius:
-            BorderRadius.circular(30),
-
-            // 🔥 DARKER PREMIUM BUTTONS
+            borderRadius: BorderRadius.circular(30),
             gradient: isLocked
                 ? LinearGradient(
               colors: isDark
-                  ? const [
-                Color(0xFF2A2A2A),
-                Color(0xFF1F1F1F)
-              ]
-                  : const [
-                Color(0xFF555555),
-                Color(0xFF444444)
-              ],
+                  ? const [Color(0xFF3F3F46), Color(0xFF2D2D2D)]
+                  : const [Color(0xFF555555), Color(0xFF444444)],
             )
                 : isDark
                 ? const LinearGradient(
               colors: [
-                Color(0xFF1E1B4B),
-                Color(0xFF0F172A),
+                Color(0xFF4338CA), // softer purple
+                Color(0xFF1E40AF), // softer blue
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -289,32 +277,14 @@ class LevelSelectionScreen extends StatelessWidget {
                 Color(0xFFF58634),
               ],
             ),
-
-            boxShadow: [
-              if (!isLocked)
-                BoxShadow(
-                  color: isDark
-                      ? Colors.indigo
-                      .withOpacity(0.5)
-                      : Colors.orange
-                      .withOpacity(0.3),
-                  blurRadius: 20,
-                  offset:
-                  const Offset(0, 10),
-                )
-            ],
           ),
           child: Padding(
-            padding:
-            const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Column(
-              mainAxisAlignment:
-              MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  isLocked
-                      ? Icons.lock
-                      : Icons.play_arrow,
+                  isLocked ? Icons.lock : Icons.play_arrow,
                   color: Colors.white,
                   size: 40,
                 ),
@@ -324,15 +294,13 @@ class LevelSelectionScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 24,
                     color: Colors.white,
-                    fontWeight:
-                    FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 20),
                 LinearProgressIndicator(
                   value: progressValue,
-                  backgroundColor:
-                  Colors.white24,
+                  backgroundColor: Colors.white24,
                   color: Colors.white,
                   minHeight: 6,
                 ),

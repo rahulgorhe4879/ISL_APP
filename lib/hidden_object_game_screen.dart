@@ -85,6 +85,8 @@ class _HiddenObjectGameScreenState
         listen: false);
 
     progress.addHeart(); // ❤️ +1
+    progress.incrementLevelProgress(
+        2); // 🔥 TRACK PROGRESS
 
     setState(() {
       _showCorrectOverlay = true;
@@ -92,6 +94,8 @@ class _HiddenObjectGameScreenState
 
     Future.delayed(
         const Duration(seconds: 1), () {
+      if (!mounted) return;
+
       if (_currentStage < 4) {
         setState(() {
           _currentStage++;
@@ -156,7 +160,7 @@ class _HiddenObjectGameScreenState
       body: Stack(
         children: [
 
-          // ❤️ HEART DISPLAY (ALWAYS VISIBLE)
+          // ❤️ HEART DISPLAY
           Positioned(
             top: 20,
             right: 20,
@@ -213,7 +217,6 @@ class _HiddenObjectGameScreenState
                         _videoController!),
                   ),
                 ),
-
                 Positioned(
                   bottom: 40,
                   right: 40,
@@ -227,7 +230,8 @@ class _HiddenObjectGameScreenState
                       const BoxDecoration(
                         color:
                         Colors.green,
-                        shape: BoxShape
+                        shape:
+                        BoxShape
                             .circle,
                       ),
                       child:
@@ -247,7 +251,7 @@ class _HiddenObjectGameScreenState
           if (_isSearching)
             GestureDetector(
               onTap:
-              _onWrongTap, // Tap anywhere = wrong
+              _onWrongTap,
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -257,8 +261,6 @@ class _HiddenObjectGameScreenState
                       BoxFit.cover,
                     ),
                   ),
-
-                  // CORRECT TAP AREA
                   Positioned(
                     left:
                     _getLeftCoordinate(
@@ -331,7 +333,6 @@ class _HiddenObjectGameScreenState
               ),
             ),
 
-          // BACK BUTTON
           Positioned(
             top: 10,
             left: 10,
@@ -350,8 +351,6 @@ class _HiddenObjectGameScreenState
       ),
     );
   }
-
-  // ORIGINAL COORDINATES
 
   double _getLeftCoordinate(
       BuildContext context) {
@@ -406,9 +405,11 @@ class _HiddenObjectGameScreenState
       false,
       builder: (context) =>
           AlertDialog(
-            title: const Text(
+            title:
+            const Text(
                 'Level Complete!'),
-            content: const Text(
+            content:
+            const Text(
                 'Amazing! You found all the objects!'),
             actions: [
               ElevatedButton(

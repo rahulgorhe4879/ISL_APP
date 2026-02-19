@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
-import 'main.dart'; // IMPORTANT: Imports the 10 words and class types
+import 'main.dart';
 
 class LevelScreen extends StatefulWidget {
   final int level;
-  const LevelScreen({Key? key, required this.level}) : super(key: key);
+
+  const LevelScreen({Key? key, required this.level})
+      : super(key: key);
 
   @override
-  _LevelScreenState createState() => _LevelScreenState();
+  _LevelScreenState createState() =>
+      _LevelScreenState();
 }
 
 class _LevelScreenState extends State<LevelScreen> {
-  final PageController _pageController = PageController();
+  final PageController _pageController =
+  PageController();
+
   int _currentPage = 0;
   List<LessonPageData> _lessons = [];
 
@@ -28,93 +33,152 @@ class _LevelScreenState extends State<LevelScreen> {
     super.dispose();
   }
 
+  void _goNext() {
+    final progress =
+    Provider.of<LevelProgress>(context,
+        listen: false);
+
+    // 🔥 increment level progress
+    progress.incrementLevelProgress(widget.level);
+
+    if (_currentPage < _lessons.length - 1) {
+      _pageController.nextPage(
+        duration:
+        const Duration(milliseconds: 300),
+        curve: Curves.easeIn,
+      );
+    } else {
+      progress.completeLevel(widget.level);
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final progress =
+    Provider.of<LevelProgress>(context);
+
+    final isDark = progress.isDarkMode;
+
     if (_lessons.isEmpty) {
       return const Scaffold(
         body: Center(child: Text('Coming Soon!')),
       );
     }
 
+    double progressValue = progress.getProgress(
+        widget.level, _lessons.length);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFCFCFA),
+      backgroundColor:
+      isDark ? const Color(0xFF1E293B) : const Color(0xFFFCFCFA),
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: (page) =>
-                  setState(() => _currentPage = page),
-              itemCount: _lessons.length,
-              itemBuilder: (context, index) => Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 20.0),
-                child: LessonVideoCard(
-                  lesson: _lessons[index],
-                ),
-              ),
-            ),
 
-            // Back Button
-            Positioned(
-              top: 10,
-              left: 10,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back,
-                    color: Colors.black),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-
-            // Left Arrow
-            if (_currentPage > 0)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.chevron_left,
-                    size: 48,
-                    color: Color(0xFFF58634),
+            // 🔥 TOP PROGRESS BAR
+            Padding(
+              padding:
+              const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 10),
+              child: ClipRRect(
+                borderRadius:
+                BorderRadius.circular(12),
+                child: AnimatedContainer(
+                  duration:
+                  const Duration(milliseconds: 400),
+                  child: LinearProgressIndicator(
+                    value: progressValue,
+                    minHeight: 8,
+                    backgroundColor: isDark
+                        ? Colors.white24
+                        : Colors.grey.shade300,
+                    color: isDark
+                        ? Colors.indigoAccent
+                        : Colors.orange,
                   ),
-                  onPressed: () =>
-                      _pageController.previousPage(
-                        duration:
-                        const Duration(milliseconds: 300),
-                        curve: Curves.easeIn,
-                      ),
                 ),
               ),
+            ),
 
-            // Right Arrow / Complete
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: Icon(
-                  _currentPage == _lessons.length - 1
-                      ? Icons.check_circle
-                      : Icons.chevron_right,
-                  size: 48,
-                  color: _currentPage ==
-                      _lessons.length - 1
-                      ? Colors.green
-                      : const Color(0xFFF58634),
-                ),
-                onPressed: () {
-                  if (_currentPage <
-                      _lessons.length - 1) {
-                    _pageController.nextPage(
-                      duration: const Duration(
-                          milliseconds: 300),
-                      curve: Curves.easeIn,
-                    );
-                  } else {
-                    Provider.of<LevelProgress>(
-                        context,
-                        listen: false)
-                        .completeLevel(widget.level);
-                    Navigator.pop(context);
-                  }
-                },
+            Expanded(
+              child: Stack(
+                children: [
+
+                  // LESSON PAGES
+                  PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (page) =>
+                        setState(
+                                () => _currentPage = page),
+                    itemCount: _lessons.length,
+                    itemBuilder: (context, index) =>
+                        Padding(
+                          padding:
+                          const EdgeInsets.symmetric(
+                              horizontal: 20.0),
+                          child: LessonVideoCard(
+                              lesson: _lessons[index]),
+                        ),
+                  ),
+
+                  // BACK BUTTON
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: isDark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                      onPressed: () =>
+                          Navigator.pop(context),
+                    ),
+                  ),
+
+                  // LEFT ARROW
+                  if (_currentPage > 0)
+                    Align(
+                      alignment:
+                      Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.chevron_left,
+                          size: 48,
+                          color: Colors.orange,
+                        ),
+                        onPressed: () =>
+                            _pageController
+                                .previousPage(
+                              duration: const Duration(
+                                  milliseconds: 300),
+                              curve: Curves.easeIn,
+                            ),
+                      ),
+                    ),
+
+                  // RIGHT / COMPLETE
+                  Align(
+                    alignment:
+                    Alignment.centerRight,
+                    child: IconButton(
+                      icon: Icon(
+                        _currentPage ==
+                            _lessons.length - 1
+                            ? Icons.check_circle
+                            : Icons.chevron_right,
+                        size: 48,
+                        color: _currentPage ==
+                            _lessons.length - 1
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      onPressed: _goNext,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -123,6 +187,8 @@ class _LevelScreenState extends State<LevelScreen> {
     );
   }
 }
+
+// ---------------- VIDEO CARD ----------------
 
 class LessonVideoCard extends StatefulWidget {
   final LessonPageData lesson;
@@ -159,7 +225,7 @@ class _LessonVideoCardState
           _controller.play();
         });
 
-        // ⏳ Show image 1 second after video starts
+        // Show image after delay
         Future.delayed(
             const Duration(seconds: 2), () {
           if (mounted) {
@@ -205,10 +271,10 @@ class _LessonVideoCardState
               ClipRRect(
                 borderRadius:
                 BorderRadius.circular(16),
-                child: VideoPlayer(_controller),
+                child:
+                VideoPlayer(_controller),
               ),
 
-              // 🖼️ Appears after 1 second
               if (_showImage)
                 Positioned(
                   top: 15,
@@ -224,8 +290,8 @@ class _LessonVideoCardState
                         width: 2,
                       ),
                       borderRadius:
-                      BorderRadius
-                          .circular(12),
+                      BorderRadius.circular(
+                          12),
                     ),
                     child: Padding(
                       padding:
