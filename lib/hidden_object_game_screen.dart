@@ -62,12 +62,11 @@ class _HiddenObjectGameScreenState
 
   LessonPageData? get _currentGameData {
     int dataIndex = _currentStage + 1;
-    List<LessonPageData>? currentLevelLessons =
-    levelData[1];
+    // Assuming levelData is defined in your main.dart or imported file
+    List<LessonPageData>? currentLevelLessons = levelData[1];
 
     return (currentLevelLessons != null &&
-        dataIndex <
-            currentLevelLessons.length)
+        dataIndex < currentLevelLessons.length)
         ? currentLevelLessons[dataIndex]
         : null;
   }
@@ -83,15 +82,17 @@ class _HiddenObjectGameScreenState
     final data = _currentGameData;
 
     if (data != null) {
-      _videoController =
-      VideoPlayerController.asset(
-          data.videoAsset)
+      _videoController = VideoPlayerController.asset(
+          data.videoAsset,
+          // Mix with others allows background music to stay on
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true)
+      )
         ..initialize().then((_) {
           if (!mounted) return;
 
           setState(() {
-            _videoController!
-                .setLooping(true);
+            _videoController!.setLooping(true);
+            _videoController!.setVolume(0.0); // 🔇 Mute the video
             _videoController!.play();
           });
         });
@@ -115,10 +116,7 @@ class _HiddenObjectGameScreenState
   }
 
   void _onObjectFound() {
-    final progress =
-    Provider.of<LevelProgress>(
-        context,
-        listen: false);
+    final progress = Provider.of<LevelProgress>(context, listen: false);
 
     progress.addHeart();
     progress.incrementLevelProgress(2);
@@ -129,8 +127,7 @@ class _HiddenObjectGameScreenState
       _showCorrectOverlay = true;
     });
 
-    Future.delayed(
-        const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
 
       if (_currentStage < 4) {
@@ -145,10 +142,7 @@ class _HiddenObjectGameScreenState
   }
 
   void _onWrongTap() {
-    final progress =
-    Provider.of<LevelProgress>(
-        context,
-        listen: false);
+    final progress = Provider.of<LevelProgress>(context, listen: false);
 
     progress.removeHeart();
 
@@ -158,8 +152,7 @@ class _HiddenObjectGameScreenState
       _showWrongOverlay = true;
     });
 
-    Future.delayed(
-        const Duration(milliseconds: 800), () {
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         setState(() {
           _showWrongOverlay = false;
@@ -182,33 +175,26 @@ class _HiddenObjectGameScreenState
 
   @override
   Widget build(BuildContext context) {
-    final hearts =
-        Provider.of<LevelProgress>(context)
-            .hearts;
+    final hearts = Provider.of<LevelProgress>(context).hearts;
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-
           // ❤️ HEART COUNTER
           Positioned(
             top: 20,
             right: 20,
             child: Row(
               children: [
-                const Icon(Icons.favorite,
-                    color: Colors.red,
-                    size: 28),
+                const Icon(Icons.favorite, color: Colors.red, size: 28),
                 const SizedBox(width: 6),
                 Text(
                   '$hearts',
-                  style:
-                  const TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight:
-                    FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 )
               ],
@@ -225,15 +211,12 @@ class _HiddenObjectGameScreenState
                 return Opacity(
                   opacity: _fadeAnimation.value,
                   child: Transform.translate(
-                    offset: Offset(
-                        0,
-                        _floatAnimation.value),
+                    offset: Offset(0, _floatAnimation.value),
                     child: Text(
                       _heartText,
                       style: TextStyle(
                         fontSize: 22,
-                        fontWeight:
-                        FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         color: _heartColor,
                       ),
                     ),
@@ -247,55 +230,39 @@ class _HiddenObjectGameScreenState
           if (!_gameStarted)
             Center(
               child: ElevatedButton(
-                onPressed: () =>
-                    setState(() =>
-                    _gameStarted =
-                    true),
+                onPressed: () => setState(() => _gameStarted = true),
                 child: const Text(
                   'Start Game',
-                  style: TextStyle(
-                      fontSize: 24),
+                  style: TextStyle(fontSize: 24),
                 ),
               ),
             ),
 
           // VIDEO MODE
-          if (_gameStarted &&
-              !_isSearching &&
-              _videoController != null)
+          if (_gameStarted && !_isSearching && _videoController != null)
             Stack(
               children: [
                 Center(
                   child: AspectRatio(
-                    aspectRatio:
-                    _videoController!
-                        .value.aspectRatio,
-                    child: VideoPlayer(
-                        _videoController!),
+                    aspectRatio: _videoController!.value.aspectRatio,
+                    child: VideoPlayer(_videoController!),
                   ),
                 ),
                 Positioned(
                   bottom: 40,
                   right: 40,
                   child: GestureDetector(
-                    onTap:
-                    _enterSearchMode,
+                    onTap: _enterSearchMode,
                     child: Container(
                       width: 70,
                       height: 70,
-                      decoration:
-                      const BoxDecoration(
-                        color:
-                        Colors.green,
-                        shape:
-                        BoxShape
-                            .circle,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
                       ),
-                      child:
-                      const Icon(
+                      child: const Icon(
                         Icons.check,
-                        color: Colors
-                            .white,
+                        color: Colors.white,
                         size: 40,
                       ),
                     ),
@@ -306,33 +273,24 @@ class _HiddenObjectGameScreenState
 
           if (_isSearching)
             GestureDetector(
-              onTap:
-              _onWrongTap,
+              onTap: _onWrongTap,
               child: Stack(
                 children: [
                   Positioned.fill(
                     child: Image.asset(
                       'assets/images/scene1.png',
-                      fit:
-                      BoxFit.cover,
+                      fit: BoxFit.cover,
                     ),
                   ),
                   Positioned(
-                    left:
-                    _getLeftCoordinate(
-                        context),
-                    top:
-                    _getTopCoordinate(
-                        context),
-                    child:
-                    GestureDetector(
-                      onTap:
-                      _onObjectFound,
+                    left: _getLeftCoordinate(context),
+                    top: _getTopCoordinate(context),
+                    child: GestureDetector(
+                      onTap: _onObjectFound,
                       child: Container(
                         width: 110,
                         height: 110,
-                        color: Colors
-                            .transparent,
+                        color: Colors.transparent,
                       ),
                     ),
                   ),
@@ -344,49 +302,28 @@ class _HiddenObjectGameScreenState
     );
   }
 
-  double _getLeftCoordinate(
-      BuildContext context) {
-    final width =
-        MediaQuery.of(context)
-            .size
-            .width;
-
+  // Coordinate functions remain the same
+  double _getLeftCoordinate(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     switch (_currentStage) {
-      case 0:
-        return width * 0.58;
-      case 1:
-        return width * 0.45;
-      case 2:
-        return width * 0.05;
-      case 3:
-        return width * 0.92;
-      case 4:
-        return width * 0.78;
-      default:
-        return 0;
+      case 0: return width * 0.58;
+      case 1: return width * 0.45;
+      case 2: return width * 0.05;
+      case 3: return width * 0.92;
+      case 4: return width * 0.78;
+      default: return 0;
     }
   }
 
-  double _getTopCoordinate(
-      BuildContext context) {
-    final height =
-        MediaQuery.of(context)
-            .size
-            .height;
-
+  double _getTopCoordinate(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
     switch (_currentStage) {
-      case 0:
-        return height * 0.68;
-      case 1:
-        return height * 0.58;
-      case 2:
-        return height * 0.72;
-      case 3:
-        return height * 0.82;
-      case 4:
-        return height * 0.58;
-      default:
-        return 0;
+      case 0: return height * 0.68;
+      case 1: return height * 0.58;
+      case 2: return height * 0.72;
+      case 3: return height * 0.82;
+      case 4: return height * 0.58;
+      default: return 0;
     }
   }
 
@@ -394,34 +331,20 @@ class _HiddenObjectGameScreenState
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
-          AlertDialog(
-            title:
-            const Text(
-                'Level Complete!'),
-            content:
-            const Text(
-                'Amazing! You found all the objects!'),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Provider.of<
-                      LevelProgress>(
-                      context,
-                      listen:
-                      false)
-                      .completeLevel(
-                      2);
-                  Navigator.pop(
-                      context);
-                  Navigator.pop(
-                      context);
-                },
-                child:
-                const Text('Finish'),
-              )
-            ],
-          ),
+      builder: (context) => AlertDialog(
+        title: const Text('Level Complete!'),
+        content: const Text('Amazing! You found all the objects!'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Provider.of<LevelProgress>(context, listen: false).completeLevel(2);
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Finish'),
+          )
+        ],
+      ),
     );
   }
 }
