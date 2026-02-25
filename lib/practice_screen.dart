@@ -11,9 +11,6 @@ import 'lesson_complete_screen.dart';
 //  Watch sign video → tap the matching object in scene
 // ═══════════════════════════════════════════════════
 
-// Hitbox centres as fractions of the scene image's natural size.
-// These align with objects embedded in scene1.png.
-// Format: Offset(leftFraction, topFraction)
 const List<Offset> _hitCentres = [
   Offset(0.58, 0.55), // Ball
   Offset(0.45, 0.45), // Car
@@ -22,11 +19,8 @@ const List<Offset> _hitCentres = [
   Offset(0.78, 0.45), // Bag
 ];
 
-// scene1.png native aspect ratio (width ÷ height).
-// Adjust if the image dimensions differ.
-const double _sceneAspect = 1462.0 / 974.0; // ≈ 1.5
-
-const double _hitboxSize = 140.0; // generous tap target
+const double _sceneAspect = 1462.0 / 974.0;
+const double _hitboxSize = 140.0;
 
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({super.key});
@@ -45,18 +39,15 @@ class _PracticeScreenState extends State<PracticeScreen>
   bool _isSearching = false;
   int? _shakingHeart;
 
-  bool? _lastTapCorrect; // null = not tapped yet
-  Offset? _wrongTapPos;  // scene-fraction position of last wrong tap
+  bool? _lastTapCorrect;
+  Offset? _wrongTapPos;
 
   VideoPlayerController? _videoCtrl;
   bool _videoReady = false;
-
   bool _showGameOver = false;
 
   late AnimationController _flashCtrl;
   late Animation<double> _flashAnim;
-
-  // Pulse animation for correct tap
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
@@ -72,7 +63,7 @@ class _PracticeScreenState extends State<PracticeScreen>
     _flashAnim = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: _flashCtrl, curve: Curves.easeOut));
     _flashCtrl.addStatusListener(
-        (s) { if (s == AnimationStatus.completed) _flashCtrl.reverse(); });
+            (s) { if (s == AnimationStatus.completed) _flashCtrl.reverse(); });
 
     _pulseCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
@@ -95,18 +86,24 @@ class _PracticeScreenState extends State<PracticeScreen>
       _stage.videoAsset,
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
     )..initialize().then((_) {
-        if (!mounted) return;
-        setState(() => _videoReady = true);
-        _videoCtrl!.setLooping(true);
-        _videoCtrl!.setVolume(0);
-        _videoCtrl!.play();
-      });
+      if (!mounted) return;
+      setState(() => _videoReady = true);
+      _videoCtrl!.setLooping(true);
+      _videoCtrl!.setVolume(0);
+      _videoCtrl!.play();
+    });
   }
 
   void _enterSearch() {
     HapticFeedback.mediumImpact();
     _videoCtrl?.pause();
     setState(() => _isSearching = true);
+  }
+
+  void _returnToVideo() {
+    HapticFeedback.lightImpact();
+    _videoCtrl?.play();
+    setState(() => _isSearching = false);
   }
 
   void _onCorrectTap() {
@@ -132,7 +129,7 @@ class _PracticeScreenState extends State<PracticeScreen>
       _shakingHeart = lostIndex;
     });
     Future.delayed(const Duration(milliseconds: 500),
-        () { if (mounted) setState(() => _shakingHeart = null); });
+            () { if (mounted) setState(() => _shakingHeart = null); });
   }
 
   void _onContinue() {
@@ -150,7 +147,7 @@ class _PracticeScreenState extends State<PracticeScreen>
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 400),
           pageBuilder: (_, __, ___) =>
-              const LessonCompleteScreen(xpEarned: 20),
+          const LessonCompleteScreen(xpEarned: 20),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
         ),
@@ -166,7 +163,7 @@ class _PracticeScreenState extends State<PracticeScreen>
     });
     if (_hearts <= 0) {
       Future.delayed(const Duration(milliseconds: 200),
-          () { if (mounted) setState(() => _showGameOver = true); });
+              () { if (mounted) setState(() => _showGameOver = true); });
     }
   }
 
@@ -191,7 +188,6 @@ class _PracticeScreenState extends State<PracticeScreen>
           children: [
             Column(
               children: [
-                // ── TOP BAR ──
                 LessonTopBar(
                   progress: progress,
                   hearts: _hearts,
@@ -210,15 +206,13 @@ class _PracticeScreenState extends State<PracticeScreen>
               ],
             ),
 
-            // ── SCREEN RED FLASH (wrong tap) ──
             AnimatedBuilder(
               animation: _flashAnim,
               builder: (_, __) => IgnorePointer(
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: Duo.red
-                          .withValues(alpha: _flashAnim.value * 0.5),
+                      color: Duo.red.withValues(alpha: _flashAnim.value * 0.5),
                       width: _flashAnim.value * 8,
                     ),
                   ),
@@ -226,7 +220,6 @@ class _PracticeScreenState extends State<PracticeScreen>
               ),
             ),
 
-            // ── GAME OVER ──
             GameOverOverlay(
                 visible: _showGameOver, onContinue: () => Navigator.pop(context)),
           ],
@@ -235,26 +228,12 @@ class _PracticeScreenState extends State<PracticeScreen>
     );
   }
 
-  // ── VIDEO PREVIEW ──
   Widget _buildVideoPreview() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Watch the sign carefully',
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Duo.textPrimary)),
-          const SizedBox(height: 4),
-          Text(
-            'Learn the sign for "${_stage.objectName}"',
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Duo.textSecondary),
-          ),
           const SizedBox(height: 16),
           Expanded(
             child: Container(
@@ -266,21 +245,24 @@ class _PracticeScreenState extends State<PracticeScreen>
               ),
               clipBehavior: Clip.antiAlias,
               child: _videoReady && _videoCtrl != null
-                  ? ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(Duo.r20 - 2),
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _videoCtrl!.value.size.width,
-                          height: _videoCtrl!.value.size.height,
-                          child: VideoPlayer(_videoCtrl!),
-                        ),
+                  ? Stack(
+                children: [
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: _videoCtrl!.value.size.width,
+                        height: _videoCtrl!.value.size.height,
+                        child: VideoPlayer(_videoCtrl!),
                       ),
-                    )
+                    ),
+                  ),
+                ],
+              )
                   : const Center(
-                      child: CircularProgressIndicator(
-                          color: Duo.green, strokeWidth: 3)),
+                  child: CircularProgressIndicator(
+                      color: Duo.green, strokeWidth: 3)),
             ),
           ),
         ],
@@ -288,226 +270,138 @@ class _PracticeScreenState extends State<PracticeScreen>
     );
   }
 
-  // ── SCENE SEARCH VIEW ──
   Widget _buildSearchView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Hint row
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Duo.white,
-                  borderRadius: BorderRadius.circular(Duo.r12),
-                  border: Border.all(color: Duo.green, width: 2.5),
-                ),
-                child: Image.asset(_stage.imageAsset, fit: BoxFit.contain),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Find: ${_stage.objectName}',
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Duo.textPrimary),
-              ),
-            ],
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cw = constraints.maxWidth;
+        final ch = constraints.maxHeight;
 
-        // Scene with hitboxes — full ratio image
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(Duo.r20),
-                border: Border.all(color: Duo.border, width: 2.5),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final cw = constraints.maxWidth;
-                  final ch = constraints.maxHeight;
+        double imgW, imgH, offLeft, offTop;
+        if (cw / ch > _sceneAspect) {
+          imgH = ch; imgW = ch * _sceneAspect;
+          offLeft = (cw - imgW) / 2; offTop = 0;
+        } else {
+          imgW = cw; imgH = cw / _sceneAspect;
+          offLeft = 0; offTop = (ch - imgH) / 2;
+        }
 
-                  // Calculate where the image actually renders within
-                  // the container when using BoxFit.contain.
-                  double imgW, imgH, offLeft, offTop;
-                  if (cw / ch > _sceneAspect) {
-                    // Container wider → letterbox left/right
-                    imgH = ch;
-                    imgW = ch * _sceneAspect;
-                    offLeft = (cw - imgW) / 2;
-                    offTop = 0;
-                  } else {
-                    // Container taller → letterbox top/bottom
-                    imgW = cw;
-                    imgH = cw / _sceneAspect;
-                    offLeft = 0;
-                    offTop = (ch - imgH) / 2;
-                  }
+        final hit = _hitCentres[_currentStage];
+        final hitLeft = offLeft + hit.dx * imgW - _hitboxSize / 2;
+        final hitTop  = offTop  + hit.dy * imgH - _hitboxSize / 2;
 
-                  final hit = _hitCentres[_currentStage];
-                  final hitLeft = offLeft + hit.dx * imgW - _hitboxSize / 2;
-                  final hitTop  = offTop  + hit.dy * imgH - _hitboxSize / 2;
-
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Background — wrong tap anywhere outside hitbox
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (details) {
-                          // Convert tap to scene fraction for feedback dot
-                          final lp = details.localPosition;
-                          final fx = (lp.dx - offLeft) / imgW;
-                          final fy = (lp.dy - offTop) / imgH;
-                          _onWrongTap(Offset(fx, fy));
-                        },
-                        child: Image.asset(
-                          'assets/images/scene1.png',
-                          fit: BoxFit.contain,
-                          width: cw,
-                          height: ch,
-                        ),
-                      ),
-
-                      // ── CORRECT HITBOX (invisible) ──
-                      if (_lastTapCorrect == null)
-                        Positioned(
-                          left: hitLeft,
-                          top: hitTop,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _onCorrectTap,
-                            child: AnimatedBuilder(
-                              animation: _pulseAnim,
-                              builder: (_, child) => Transform.scale(
-                                scale: _pulseCtrl.isAnimating
-                                    ? _pulseAnim.value
-                                    : 1.0,
-                                child: child,
-                              ),
-                              child: const SizedBox(
-                                width: _hitboxSize,
-                                height: _hitboxSize,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // ── CORRECT GLOW (after correct tap) ──
-                      if (_lastTapCorrect == true)
-                        Positioned(
-                          left: hitLeft,
-                          top: hitTop,
-                          child: Container(
-                            width: _hitboxSize,
-                            height: _hitboxSize,
-                            decoration: BoxDecoration(
-                              color: Duo.green.withValues(alpha: 0.25),
-                              borderRadius:
-                                  BorderRadius.circular(_hitboxSize / 2),
-                              border: Border.all(
-                                  color: Duo.green, width: 3.5),
-                            ),
-                            child: const Icon(Icons.check_circle,
-                                color: Duo.green, size: 48),
-                          ),
-                        ),
-
-                      // ── WRONG TAP INDICATOR ──
-                      if (_wrongTapPos != null)
-                        Positioned(
-                          left: offLeft +
-                              _wrongTapPos!.dx * imgW -
-                              24,
-                          top: offTop +
-                              _wrongTapPos!.dy * imgH -
-                              24,
-                          child: IgnorePointer(
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Duo.red.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Duo.red, width: 2.5),
-                              ),
-                              child: const Icon(Icons.close,
-                                  color: Duo.red, size: 26),
-                            ),
-                          ),
-                        ),
-
-                      // ── PIP VIDEO (bottom-right) ──
-                      if (_videoCtrl != null && _videoReady)
-                        Positioned(
-                          bottom: 10,
-                          right: 10,
-                          child: Container(
-                            width: 72,
-                            height: 96,
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(Duo.r12),
-                              border: Border.all(
-                                  color: Duo.green, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _videoCtrl!.value.size.width,
-                                height: _videoCtrl!.value.size.height,
-                                child: VideoPlayer(_videoCtrl!),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (details) {
+                final lp = details.localPosition;
+                final fx = (lp.dx - offLeft) / imgW;
+                final fy = (lp.dy - offTop) / imgH;
+                _onWrongTap(Offset(fx, fy));
+              },
+              child: Image.asset(
+                'assets/images/scene1.png',
+                fit: BoxFit.cover,
               ),
             ),
-          ),
-        ),
-      ],
+
+            if (_lastTapCorrect == null)
+              Positioned(
+                left: hitLeft, top: hitTop,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _onCorrectTap,
+                  child: AnimatedBuilder(
+                    animation: _pulseAnim,
+                    builder: (_, child) => Transform.scale(
+                      scale: _pulseCtrl.isAnimating ? _pulseAnim.value : 1.0,
+                      child: child,
+                    ),
+                    child: const SizedBox(width: _hitboxSize, height: _hitboxSize),
+                  ),
+                ),
+              ),
+
+            if (_lastTapCorrect == true)
+              Positioned(
+                left: hitLeft, top: hitTop,
+                child: Container(
+                  width: _hitboxSize, height: _hitboxSize,
+                  decoration: BoxDecoration(
+                    color: Duo.green.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(_hitboxSize / 2),
+                    border: Border.all(color: Duo.green, width: 3.5),
+                  ),
+                  child: const Icon(Icons.check_circle, color: Duo.green, size: 48),
+                ),
+              ),
+
+            if (_wrongTapPos != null)
+              Positioned(
+                left: offLeft + _wrongTapPos!.dx * imgW - 24,
+                top: offTop + _wrongTapPos!.dy * imgH - 24,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(
+                      color: Duo.red.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Duo.red, width: 2.5),
+                    ),
+                    child: const Icon(Icons.close, color: Duo.red, size: 26),
+                  ),
+                ),
+              ),
+
+            if (_videoCtrl != null && _videoReady)
+              Positioned(
+                bottom: 10, right: 10,
+                child: GestureDetector(
+                  onTap: _returnToVideo,
+                  child: Container(
+                    width: 72, height: 96,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(Duo.r12),
+                      border: Border.all(color: Duo.green, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 8, offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoCtrl!.value.size.width,
+                        height: _videoCtrl!.value.size.height,
+                        child: VideoPlayer(_videoCtrl!),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  // ── BOTTOM CTA BAR ──
   Widget _buildBottomBar(double bottomPad) {
-    // Video preview → I'M READY
     if (!_isSearching) {
       return Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 16),
         decoration: const BoxDecoration(
           color: Duo.white,
-          border:
-              Border(top: BorderSide(color: Duo.border, width: 2)),
+          border: Border(top: BorderSide(color: Duo.border, width: 2)),
         ),
         child: ChunkyButton(
-          text: "I'M READY!",
-          icon: Icons.search,
+          text: "",
+          icon: Icons.search_rounded,
           color: _videoReady ? Duo.blue : Duo.disabled,
-          shadowColor:
-              _videoReady ? Duo.blueDark : Duo.disabledDark,
+          shadowColor: _videoReady ? Duo.blueDark : Duo.disabledDark,
           onPressed: _videoReady ? _enterSearch : null,
           height: 52,
           fontSize: 16,
@@ -515,7 +409,6 @@ class _PracticeScreenState extends State<PracticeScreen>
       );
     }
 
-    // Correct
     if (_lastTapCorrect == true) {
       return Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 16),
@@ -527,34 +420,25 @@ class _PracticeScreenState extends State<PracticeScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(children: [
-              const Icon(Icons.check_circle,
-                  color: Duo.greenDarker, size: 24),
+              const Icon(Icons.check_circle, color: Duo.greenDarker, size: 24),
               const SizedBox(width: 8),
               Text(
                 'Great! Found the ${_stage.objectName}!',
                 style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Duo.greenDarker),
+                    fontSize: 16, fontWeight: FontWeight.w800, color: Duo.greenDarker),
               ),
             ]),
             const SizedBox(height: 12),
             ChunkyButton(
-              text: _currentStage < _totalStages - 1
-                  ? 'CONTINUE'
-                  : 'FINISH',
-              color: Duo.green,
-              shadowColor: Duo.greenDark,
-              onPressed: _onContinue,
-              height: 52,
-              fontSize: 16,
+              text: _currentStage < _totalStages - 1 ? 'CONTINUE' : 'FINISH',
+              color: Duo.green, shadowColor: Duo.greenDark,
+              onPressed: _onContinue, height: 52, fontSize: 16,
             ),
           ],
         ),
       );
     }
 
-    // Wrong
     if (_lastTapCorrect == false) {
       return Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 16),
@@ -571,45 +455,26 @@ class _PracticeScreenState extends State<PracticeScreen>
               Text(
                 'Not quite — try again!',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Duo.redDark),
+                    fontSize: 16, fontWeight: FontWeight.w800, color: Duo.redDark),
               ),
             ]),
             const SizedBox(height: 12),
             ChunkyButton(
-              text: 'TRY AGAIN',
-              color: Duo.red,
-              shadowColor: Duo.redDark,
-              onPressed: _onTryAgain,
-              height: 52,
-              fontSize: 16,
+              text: 'TRY AGAIN', color: Duo.red, shadowColor: Duo.redDark,
+              onPressed: _onTryAgain, height: 52, fontSize: 16,
             ),
           ],
         ),
       );
     }
 
-    // Searching, no tap yet
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 16),
       decoration: const BoxDecoration(
         color: Duo.white,
         border: Border(top: BorderSide(color: Duo.border, width: 2)),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.touch_app, color: Duo.textSecondary, size: 22),
-          const SizedBox(width: 10),
-          Text(
-            'Tap the ${_stage.objectName} in the image above',
-            style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Duo.textSecondary),
-          ),
-        ],
-      ),
+      child: const SizedBox(height: 24),
     );
   }
 }
