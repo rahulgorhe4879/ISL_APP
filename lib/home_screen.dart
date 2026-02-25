@@ -6,10 +6,6 @@ import 'duo_theme.dart';
 import 'learn_screen.dart';
 import 'practice_screen.dart';
 
-// ═══════════════════════════════════════════════════
-//  HOME SCREEN — Duolingo winding path
-// ═══════════════════════════════════════════════════
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -34,10 +30,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────
-//  TOP STATS BAR — streak, gems, hearts
-// ─────────────────────────────────────────────────
 
 class _TopStatsBar extends StatelessWidget {
   final AppState state;
@@ -172,18 +164,14 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────
-//  UNIT HEADER — gradient card with progress bar
-// ─────────────────────────────────────────────────
-
 class _UnitHeader extends StatelessWidget {
   final AppState state;
   const _UnitHeader({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    const int totalLessons = 5;
-    final int completedLessons = state.currentNodeIndex.clamp(0, totalLessons);
+    const int totalLessons = 7;
+    final int completedLessons = state.lessonsCompleted.clamp(0, totalLessons);
     final double progress = completedLessons / totalLessons;
 
     return Container(
@@ -252,7 +240,6 @@ class _UnitHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
@@ -277,10 +264,6 @@ class _UnitHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────
-//  STICKY CTA BUTTON — pinned above bottom nav
-// ─────────────────────────────────────────────────
-
 class _StickyCtaButton extends StatelessWidget {
   final AppState state;
   const _StickyCtaButton({required this.state});
@@ -294,8 +277,8 @@ class _StickyCtaButton extends StatelessWidget {
     final String label = node.type == PathNodeType.practice
         ? 'Start Practice'
         : node.type == PathNodeType.checkpoint
-            ? 'Start Review'
-            : 'Continue: ${node.label}';
+        ? 'Start Review'
+        : 'Continue Lesson';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -317,10 +300,6 @@ class _StickyCtaButton extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────
-//  NAVIGATION HELPER
-// ─────────────────────────────────────────────────
 
 void _navigateToNode(BuildContext context, int index, AppState state) {
   if (!state.isNodeUnlocked(index)) {
@@ -357,18 +336,13 @@ void _navigateToNode(BuildContext context, int index, AppState state) {
   );
 }
 
-// ─────────────────────────────────────────────────
-//  LEARNING PATH — scrollable S-curve with nodes
-// ─────────────────────────────────────────────────
-
 class _LearningPath extends StatelessWidget {
   final AppState state;
   const _LearningPath({required this.state});
 
-  // Total height per node slot and the actual circle size
   static const double _nodeSpacing = 130.0;
   static const double _circleDiameter = 64.0;
-  static const double _slotSize = 96.0; // circleDiameter + glow padding
+  static const double _slotSize = 96.0;
   static const double _topPadding = 40.0;
 
   @override
@@ -377,7 +351,6 @@ class _LearningPath extends StatelessWidget {
     final totalHeight =
         _topPadding + (pathNodes.length * _nodeSpacing) + 80;
 
-    // Absolute center positions for each node
     final List<Offset> positions = [];
     for (int i = 0; i < pathNodes.length; i++) {
       final x = pathNodes[i].xPercent * (screenWidth - _circleDiameter) +
@@ -393,7 +366,6 @@ class _LearningPath extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Connecting path lines
             CustomPaint(
               size: Size(screenWidth, totalHeight),
               painter: _PathLinePainter(
@@ -402,7 +374,6 @@ class _LearningPath extends StatelessWidget {
               ),
             ),
 
-            // Nodes
             for (int i = 0; i < pathNodes.length; i++)
               Positioned(
                 left: positions[i].dx - (_slotSize / 2),
@@ -416,44 +387,12 @@ class _LearningPath extends StatelessWidget {
                   onTap: () => _navigateToNode(context, i, state),
                 ),
               ),
-
-            // Node labels (below each node)
-            for (int i = 0; i < pathNodes.length; i++)
-              Positioned(
-                left: positions[i].dx - 52,
-                top: positions[i].dy + (_circleDiameter / 2) + 10,
-                child: SizedBox(
-                  width: 104,
-                  child: Text(
-                    pathNodes[i].label,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: state.isNodeActive(i) ||
-                              state.isNodeCompleted(i)
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: state.isNodeCompleted(i)
-                          ? Duo.goldDark
-                          : state.isNodeActive(i)
-                              ? Duo.greenDarker
-                              : Duo.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────────
-//  PATH LINE PAINTER — solid green (done) / dashed gray (upcoming)
-// ─────────────────────────────────────────────────
 
 class _PathLinePainter extends CustomPainter {
   final List<Offset> positions;
@@ -475,7 +414,6 @@ class _PathLinePainter extends CustomPainter {
         ..cubicTo(start.dx, midY, end.dx, midY, end.dx, end.dy);
 
       if (i < completedUpTo) {
-        // Solid green — completed segment
         canvas.drawPath(
           path,
           Paint()
@@ -485,7 +423,6 @@ class _PathLinePainter extends CustomPainter {
             ..strokeCap = StrokeCap.round,
         );
       } else {
-        // Dashed gray — upcoming segment
         _drawDashed(
           canvas,
           path,
@@ -516,10 +453,6 @@ class _PathLinePainter extends CustomPainter {
   bool shouldRepaint(_PathLinePainter old) =>
       old.completedUpTo != completedUpTo;
 }
-
-// ─────────────────────────────────────────────────
-//  PATH NODE WIDGET — active / completed / locked
-// ─────────────────────────────────────────────────
 
 class _PathNodeWidget extends StatefulWidget {
   final int index;
@@ -581,7 +514,6 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
   Widget build(BuildContext context) {
     const double size = 64.0;
 
-    // ── Determine visual state ──
     final Color bgColor;
     final Color shadowColor;
     final Color iconColor;
@@ -606,7 +538,6 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
       icon = widget.data.icon;
     }
 
-    // ── Base circle ──
     Widget circle = GestureDetector(
       onTap: widget.onTap,
       child: Container(
@@ -623,7 +554,6 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
       ),
     );
 
-    // ── Lock badge overlay ──
     if (widget.isLocked) {
       circle = Stack(
         clipBehavior: Clip.none,
@@ -647,7 +577,6 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
       );
     }
 
-    // ── Active: double glow ring + bounce ──
     if (widget.isActive) {
       circle = AnimatedBuilder(
         animation: _ctrl,
@@ -656,7 +585,6 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Outer soft glow halo
               Container(
                 width: size + 30,
                 height: size + 30,
@@ -665,7 +593,6 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
                   color: Duo.green.withValues(alpha: 0.18),
                 ),
               ),
-              // White ring
               Container(
                 width: size + 12,
                 height: size + 12,
