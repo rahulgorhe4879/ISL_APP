@@ -51,6 +51,12 @@ class _PracticeScreenState extends State<PracticeScreen>
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
+  // Tutorial logic
+  late AnimationController _tutorialCtrl;
+  late Animation<Offset> _handPosAnim;
+  bool _isTutorialActive = false;
+  bool _tutorialShown = false;
+
   LessonPageData get _stage =>
       practiceData[_currentStage.clamp(0, practiceData.length - 1)];
 
@@ -69,6 +75,30 @@ class _PracticeScreenState extends State<PracticeScreen>
         vsync: this, duration: const Duration(milliseconds: 600));
     _pulseAnim = Tween<double>(begin: 0.8, end: 1.4).animate(
         CurvedAnimation(parent: _pulseCtrl, curve: Curves.elasticOut));
+
+    // Initialize Tutorial Animation (Scanning pattern)
+    _tutorialCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 4000));
+    
+    final targetHit = _hitCentres[0];
+    _handPosAnim = TweenSequence<Offset>([
+      TweenSequenceItem(
+        tween: Tween<Offset>(begin: const Offset(0.2, 0.2), end: const Offset(0.8, 0.3)).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<Offset>(begin: const Offset(0.8, 0.3), end: const Offset(0.2, 0.6)).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<Offset>(begin: const Offset(0.2, 0.6), end: const Offset(0.8, 0.8)).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<Offset>(begin: const Offset(0.8, 0.8), end: targetHit).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 40,
+      ),
+    ]).animate(_tutorialCtrl);
 
     _loadStage();
   }
@@ -98,6 +128,15 @@ class _PracticeScreenState extends State<PracticeScreen>
     HapticFeedback.mediumImpact();
     _videoCtrl?.pause();
     setState(() => _isSearching = true);
+
+    // Trigger tutorial only on first stage search, once per screen session
+    if (_currentStage == 0 && !_tutorialShown) {
+      setState(() {
+        _isTutorialActive = true;
+        _tutorialShown = true;
+      });
+      _tutorialCtrl.forward(from: 0);
+    }
   }
 
   void _returnToVideo() {
@@ -108,6 +147,12 @@ class _PracticeScreenState extends State<PracticeScreen>
 
   void _onCorrectTap() {
     if (_lastTapCorrect != null || _showGameOver) return;
+    
+    if (_isTutorialActive) {
+      setState(() => _isTutorialActive = false);
+      _tutorialCtrl.stop();
+    }
+
     HapticFeedback.heavyImpact();
     _pulseCtrl.forward(from: 0);
     setState(() {
@@ -118,6 +163,12 @@ class _PracticeScreenState extends State<PracticeScreen>
 
   void _onWrongTap(Offset sceneFraction) {
     if (_lastTapCorrect != null || _showGameOver) return;
+
+    if (_isTutorialActive) {
+      setState(() => _isTutorialActive = false);
+      _tutorialCtrl.stop();
+    }
+
     HapticFeedback.heavyImpact();
     _flashCtrl.forward(from: 0);
 
@@ -172,6 +223,7 @@ class _PracticeScreenState extends State<PracticeScreen>
     _videoCtrl?.dispose();
     _flashCtrl.dispose();
     _pulseCtrl.dispose();
+    _tutorialCtrl.dispose();
     super.dispose();
   }
 
@@ -354,6 +406,32 @@ class _PracticeScreenState extends State<PracticeScreen>
                 ),
               ),
 
+            if (_isTutorialActive)
+              AnimatedBuilder(
+                animation: _handPosAnim,
+                builder: (context, child) {
+                  final pos = _handPosAnim.value;
+                  return Positioned(
+                    left: offLeft + pos.dx * imgW - 15,
+                    top: offTop + pos.dy * imgH - 5,
+                    child: IgnorePointer(
+                      child: Icon(
+                        Icons.touch_app,
+                        size: 60,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 15,
+                            offset: const Offset(4, 4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
             if (_videoCtrl != null && _videoReady)
               Positioned(
                 bottom: 10, right: 10,
@@ -403,7 +481,7 @@ class _PracticeScreenState extends State<PracticeScreen>
           color: _videoReady ? Duo.blue : Duo.disabled,
           shadowColor: _videoReady ? Duo.blueDark : Duo.disabledDark,
           onPressed: _videoReady ? _enterSearch : null,
-          height: 52,
+          height: 60,
           fontSize: 16,
         ),
       );
@@ -419,20 +497,13 @@ class _PracticeScreenState extends State<PracticeScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(children: [
-              const Icon(Icons.check_circle, color: Duo.greenDarker, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Great! Found the ${_stage.objectName}!',
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w800, color: Duo.greenDarker),
-              ),
-            ]),
+            const Icon(Icons.check_circle, color: Duo.greenDarker, size: 48),
             const SizedBox(height: 12),
             ChunkyButton(
-              text: _currentStage < _totalStages - 1 ? 'CONTINUE' : 'FINISH',
+              text: "",
+              icon: _currentStage < _totalStages - 1 ? Icons.arrow_forward : Icons.celebration,
               color: Duo.green, shadowColor: Duo.greenDark,
-              onPressed: _onContinue, height: 52, fontSize: 16,
+              onPressed: _onContinue, height: 60, fontSize: 16,
             ),
           ],
         ),
@@ -449,19 +520,13 @@ class _PracticeScreenState extends State<PracticeScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Row(children: [
-              Icon(Icons.cancel, color: Duo.redDark, size: 24),
-              SizedBox(width: 8),
-              Text(
-                'Not quite — try again!',
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w800, color: Duo.redDark),
-              ),
-            ]),
+            const Icon(Icons.cancel, color: Duo.redDark, size: 48),
             const SizedBox(height: 12),
             ChunkyButton(
-              text: 'TRY AGAIN', color: Duo.red, shadowColor: Duo.redDark,
-              onPressed: _onTryAgain, height: 52, fontSize: 16,
+              text: "",
+              icon: Icons.refresh,
+              color: Duo.red, shadowColor: Duo.redDark,
+              onPressed: _onTryAgain, height: 60, fontSize: 16,
             ),
           ],
         ),

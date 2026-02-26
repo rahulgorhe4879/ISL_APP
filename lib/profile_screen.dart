@@ -313,8 +313,24 @@ class ProfileScreen extends StatelessWidget {
                         Switch(
                           value: state.showWordsInLesson,
                           onChanged: (_) => state.toggleShowWords(),
-                          activeTrackColor: Duo.green,
-                          activeThumbColor: Duo.white,
+
+                          trackColor: MaterialStateProperty.resolveWith<Color?>(
+                                (states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return Duo.green; // ON track color
+                              }
+                              return null; // default OFF
+                            },
+                          ),
+
+                          thumbColor: MaterialStateProperty.resolveWith<Color?>(
+                                (states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return Duo.white; // ON thumb color
+                              }
+                              return null; // default OFF
+                            },
+                          ),
                         ),
                       ],
                     ),
