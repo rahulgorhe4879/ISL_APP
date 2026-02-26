@@ -104,6 +104,7 @@ class AppState extends ChangeNotifier {
   int practiceCompleted = 0;
   bool practiceCompletedPerfect = false;
   bool showWordsInLesson = true;
+  bool isDarkMode = false;
 
   int get currentNodeIndex => _currentNodeIndex;
 
@@ -116,6 +117,12 @@ class AppState extends ChangeNotifier {
     showWordsInLesson = !showWordsInLesson;
     notifyListeners();
   }
+
+  void toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    notifyListeners();
+  }
+
   int get totalNodes => pathNodes.length;
 
   bool isNodeUnlocked(int index) => index <= _currentNodeIndex;
