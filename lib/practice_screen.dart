@@ -12,11 +12,11 @@ import 'lesson_complete_screen.dart';
 // ═══════════════════════════════════════════════════
 
 const List<Offset> _hitCentres = [
-  Offset(0.58, 0.55), // Ball
-  Offset(0.45, 0.45), // Car
-  Offset(0.05, 0.60), // Boat
-  Offset(0.75, 0.70), // Book
-  Offset(0.78, 0.45), // Bag
+  Offset(0.63, 0.72), // Ball
+  Offset(0.45, 0.60), // Car
+  Offset(0.02, 0.75), // Boat
+  Offset(0.90, 0.90), // Book
+  Offset(0.88, 0.70), // Bag
 ];
 
 const double _sceneAspect = 1462.0 / 974.0;
