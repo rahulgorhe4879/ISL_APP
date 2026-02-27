@@ -37,9 +37,9 @@ class Achievement {
   final String description;
   final IconData icon;
   final Color color;
-  final int target;
+  int target;
 
-  const Achievement({
+  Achievement({
     required this.title,
     required this.description,
     required this.icon,
@@ -83,11 +83,11 @@ const List<PathNodeData> pathNodes = [
   PathNodeData(xPercent: 0.42, type: PathNodeType.practice, label: 'Practice', icon: Icons.search),
 ];
 
-const List<Achievement> achievements = [
-  Achievement(title: 'First Step', description: 'Complete your first lesson', icon: Icons.flag, color: Color(0xFF58CC02), target: 1),
-  Achievement(title: 'Quick Learner', description: 'Complete all sign lessons', icon: Icons.school, color: Color(0xFF1CB0F6), target: 7),
-  Achievement(title: 'Sharp Eye', description: 'Complete the practice game', icon: Icons.visibility, color: Color(0xFFFF9600), target: 1),
-  Achievement(title: 'Perfect Score', description: 'Finish practice with all 3 hearts', icon: Icons.favorite, color: Color(0xFFFF4B4B), target: 1),
+final List<Achievement> achievements = [
+  Achievement(title: 'First Step', description: 'Complete your first lesson', icon: Icons.flag, color: const Color(0xFF58CC02), target: 1),
+  Achievement(title: 'Quick Learner', description: 'Complete all sign lessons', icon: Icons.school, color: const Color(0xFF1CB0F6), target: 7),
+  Achievement(title: 'Sharp Eye', description: 'Complete the practice game', icon: Icons.visibility, color: const Color(0xFFFF9600), target: 1),
+  Achievement(title: 'Perfect Score', description: 'Finish practice with all 3 hearts', icon: Icons.favorite, color: const Color(0xFFFF4B4B), target: 1),
 ];
 
 // ─────────────────────────────────────────────────
@@ -104,6 +104,7 @@ class AppState extends ChangeNotifier {
   int practiceCompleted = 0;
   bool practiceCompletedPerfect = false;
   bool showWordsInLesson = true;
+  bool isDarkMode = false;
 
   int get currentNodeIndex => _currentNodeIndex;
 
@@ -116,6 +117,12 @@ class AppState extends ChangeNotifier {
     showWordsInLesson = !showWordsInLesson;
     notifyListeners();
   }
+
+  void toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    notifyListeners();
+  }
+
   int get totalNodes => pathNodes.length;
 
   bool isNodeUnlocked(int index) => index <= _currentNodeIndex;
