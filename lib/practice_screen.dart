@@ -11,8 +11,6 @@ import 'lesson_complete_screen.dart';
 //  Watch sign video → tap the matching object in scene
 // ═══════════════════════════════════════════════════
 
-
-// the following coordinates have been set up as per the lenovo tab for landscape orientation
 const List<Offset> _hitCentres = [
   Offset(0.63, 0.72), // Ball
   Offset(0.45, 0.60), // Car
@@ -438,7 +436,7 @@ class _PracticeScreenState extends State<PracticeScreen>
 
             if (_videoCtrl != null && _videoReady)
               Positioned(
-                bottom: 10, right: 10,
+                top: 10, right: 10,
                 child: GestureDetector(
                   onTap: _returnToVideo,
                   child: Container(
