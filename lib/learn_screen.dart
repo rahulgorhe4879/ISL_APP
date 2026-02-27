@@ -104,10 +104,8 @@ class _LearnScreenState extends State<LearnScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Duo.bg,
       body: SafeArea(
         child: Stack(
           children: [
@@ -115,6 +113,7 @@ class _LearnScreenState extends State<LearnScreen> with TickerProviderStateMixin
               children: [
                 LessonTopBar(progress: (widget.lessonIndex + 1) / 7, onClose: () => Navigator.pop(context)),
 
+                // TOP TEXT REMOVED
                 const SizedBox(height: 16),
 
                 Expanded(
@@ -122,11 +121,7 @@ class _LearnScreenState extends State<LearnScreen> with TickerProviderStateMixin
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
                       width: double.infinity,
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(Duo.r20),
-                          border: Border.all(color: isDark ? Colors.white12 : Duo.border, width: 2.5)
-                      ),
+                      decoration: BoxDecoration(color: Duo.cardBg, borderRadius: BorderRadius.circular(Duo.r20), border: Border.all(color: Duo.border, width: 2.5)),
                       clipBehavior: Clip.antiAlias,
                       child: _videoReady
                           ? Stack(
@@ -145,12 +140,7 @@ class _LearnScreenState extends State<LearnScreen> with TickerProviderStateMixin
                                 scale: _iconScale,
                                 child: Container(
                                   width: 90, height: 90,
-                                  decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF2E3E44) : Duo.white,
-                                      borderRadius: BorderRadius.circular(Duo.r12),
-                                      border: Border.all(color: Duo.green, width: 3),
-                                      boxShadow: [BoxShadow(color: Duo.green.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]
-                                  ),
+                                  decoration: BoxDecoration(color: Duo.white, borderRadius: BorderRadius.circular(Duo.r12), border: Border.all(color: Duo.green, width: 3), boxShadow: [BoxShadow(color: Duo.green.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]),
                                   padding: const EdgeInsets.all(8),
                                   child: Image.asset(_lesson.imageAsset, fit: BoxFit.contain),
                                 ),
@@ -163,15 +153,17 @@ class _LearnScreenState extends State<LearnScreen> with TickerProviderStateMixin
                   ),
                 ),
 
+                // OBJECT NAME TEXT REMOVED
                 const SizedBox(height: 20),
 
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   child: ChunkyButton(
+                    // TEXT REPLACED WITH ARROW ICON
                     text: '',
                     icon: Icons.arrow_forward_rounded,
-                    color: _showContinue ? Duo.green : (isDark ? const Color(0xFF2E3E44) : Duo.disabled),
-                    shadowColor: _showContinue ? Duo.greenDark : (isDark ? const Color(0xFF1F2E35) : Duo.disabledDark),
+                    color: _showContinue ? Duo.green : Duo.disabled,
+                    shadowColor: _showContinue ? Duo.greenDark : Duo.disabledDark,
                     onPressed: _showContinue && !_showXPFlash ? _onContinue : null,
                     height: 56,
                   ),

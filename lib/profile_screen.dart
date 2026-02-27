@@ -18,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
         final initials = name.isNotEmpty ? name[0].toUpperCase() : 'L';
 
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Duo.bg,
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -69,10 +69,10 @@ class ProfileScreen extends StatelessWidget {
                           children: [
                             Text(
                               name,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
-                                color: Theme.of(context).textTheme.bodyLarge?.color ?? Duo.textPrimary,
+                                color: Duo.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -109,12 +109,12 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // ── STATISTICS ──
-                  Text(
+                  const Text(
                     'Statistics',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: Theme.of(context).textTheme.bodyLarge?.color ?? Duo.textPrimary,
+                      color: Duo.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -168,12 +168,12 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // ── ACHIEVEMENTS ──
-                  Text(
+                  const Text(
                     'Achievements',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: Theme.of(context).textTheme.bodyLarge?.color ?? Duo.textPrimary,
+                      color: Duo.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -187,7 +187,7 @@ class ProfileScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
+                        color: Duo.cardBg,
                         borderRadius: BorderRadius.circular(Duo.r16),
                         border: Border.all(
                           color: completed ? a.color : Duo.border,
@@ -222,10 +222,10 @@ class ProfileScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   a.title,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).textTheme.bodyLarge?.color ?? Duo.textPrimary,
+                                    color: Duo.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -265,54 +265,21 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // ── SETTINGS ──
-                  Text(
+                  const Text(
                     'Settings',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: Theme.of(context).textTheme.bodyLarge?.color ?? Duo.textPrimary,
+                      color: Duo.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
 
-                  // Dark Mode Switch
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(Duo.r16),
-                      border: Border.all(color: Duo.border, width: 2),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.dark_mode, color: Duo.purple, size: 24),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Dark Mode',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Duo.textPrimary,
-                            ),
-                          ),
-                        ),
-                        Switch(
-                          value: state.isDarkMode,
-                          onChanged: (_) => state.toggleDarkMode(),
-                          activeColor: Duo.green,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Show words switch
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
+                      color: Duo.cardBg,
                       borderRadius: BorderRadius.circular(Duo.r16),
                       border: Border.all(color: Duo.border, width: 2),
                     ),
@@ -346,7 +313,24 @@ class ProfileScreen extends StatelessWidget {
                         Switch(
                           value: state.showWordsInLesson,
                           onChanged: (_) => state.toggleShowWords(),
-                          activeColor: Duo.green,
+
+                          trackColor: MaterialStateProperty.resolveWith<Color?>(
+                                (states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return Duo.green; // ON track color
+                              }
+                              return null; // default OFF
+                            },
+                          ),
+
+                          thumbColor: MaterialStateProperty.resolveWith<Color?>(
+                                (states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return Duo.white; // ON thumb color
+                              }
+                              return null; // default OFF
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -426,7 +410,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Duo.cardBg,
         borderRadius: BorderRadius.circular(Duo.r16),
         border: Border.all(color: Duo.border, width: 2),
       ),
@@ -439,10 +423,10 @@ class _StatCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 value,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: Theme.of(context).textTheme.bodyLarge?.color ?? Duo.textPrimary,
+                  color: Duo.textPrimary,
                 ),
               ),
             ],
