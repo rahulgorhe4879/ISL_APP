@@ -15,7 +15,7 @@ const List<Offset> _hitCentres = [
   Offset(0.63, 0.72), // Ball
   Offset(0.45, 0.60), // Car
   Offset(0.02, 0.75), // Boat
-  Offset(0.90, 0.90), // Book
+  Offset(1.15, 0.98), // Book
   Offset(0.88, 0.70), // Bag
 ];
 
