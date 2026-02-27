@@ -15,7 +15,7 @@ const List<Offset> _hitCentres = [
   Offset(0.63, 0.72), // Ball
   Offset(0.45, 0.60), // Car
   Offset(0.02, 0.75), // Boat
-  Offset(0.90, 0.90), // Book
+  Offset(1.15, 0.98), // Book
   Offset(0.88, 0.70), // Bag
 ];
 
@@ -231,9 +231,10 @@ class _PracticeScreenState extends State<PracticeScreen>
   Widget build(BuildContext context) {
     final progress = (_currentStage + 1) / _totalStages;
     final bottomPad = MediaQuery.of(context).padding.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Duo.bg,
+      backgroundColor: _isSearching ? Colors.white : Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -281,6 +282,7 @@ class _PracticeScreenState extends State<PracticeScreen>
   }
 
   Widget _buildVideoPreview() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
@@ -291,9 +293,9 @@ class _PracticeScreenState extends State<PracticeScreen>
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Duo.cardBg,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(Duo.r20),
-                border: Border.all(color: Duo.border, width: 2.5),
+                border: Border.all(color: isDark ? Colors.white12 : Duo.border, width: 2.5),
               ),
               clipBehavior: Clip.antiAlias,
               child: _videoReady && _videoCtrl != null
@@ -434,7 +436,7 @@ class _PracticeScreenState extends State<PracticeScreen>
 
             if (_videoCtrl != null && _videoReady)
               Positioned(
-                bottom: 10, right: 10,
+                top: 10, right: 10,
                 child: GestureDetector(
                   onTap: _returnToVideo,
                   child: Container(
@@ -468,18 +470,20 @@ class _PracticeScreenState extends State<PracticeScreen>
   }
 
   Widget _buildBottomBar(double bottomPad) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (!_isSearching) {
       return Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 16),
-        decoration: const BoxDecoration(
-          color: Duo.white,
-          border: Border(top: BorderSide(color: Duo.border, width: 2)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          border: Border(top: BorderSide(color: isDark ? Colors.white10 : Duo.border, width: 2)),
         ),
         child: ChunkyButton(
           text: "",
           icon: Icons.search_rounded,
-          color: _videoReady ? Duo.blue : Duo.disabled,
-          shadowColor: _videoReady ? Duo.blueDark : Duo.disabledDark,
+          color: _videoReady ? Duo.blue : (isDark ? const Color(0xFF2E3E44) : Duo.disabled),
+          shadowColor: _videoReady ? Duo.blueDark : (isDark ? const Color(0xFF1F2E35) : Duo.disabledDark),
           onPressed: _videoReady ? _enterSearch : null,
           height: 60,
           fontSize: 16,

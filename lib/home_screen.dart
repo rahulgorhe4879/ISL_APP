@@ -13,8 +13,9 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
-          backgroundColor: Duo.bg,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: Column(
               children: [
@@ -39,14 +40,16 @@ class _TopStatsBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final int hearts = (state.totalXP ~/ 10).clamp(0, 3);
     final bool heartsEmpty = hearts == 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Duo.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(Duo.r16),
-        boxShadow: const [
+        border: isDark ? Border.all(color: Colors.white10, width: 1.5) : null,
+        boxShadow: isDark ? null : const [
           BoxShadow(
             color: Color(0x10000000),
             blurRadius: 12,
@@ -83,6 +86,7 @@ class _StreakPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool active = streak > 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
@@ -93,7 +97,7 @@ class _StreakPill extends StatelessWidget {
         border: Border.all(
           color: active
               ? Duo.orange.withValues(alpha: 0.45)
-              : Duo.border,
+              : (isDark ? Colors.white24 : Duo.border),
           width: 1.5,
         ),
       ),
@@ -135,13 +139,14 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: urgent ? Duo.red.withValues(alpha: 0.08) : Colors.transparent,
         borderRadius: BorderRadius.circular(Duo.r12),
         border: Border.all(
-          color: urgent ? Duo.red.withValues(alpha: 0.45) : Duo.border,
+          color: urgent ? Duo.red.withValues(alpha: 0.45) : (isDark ? Colors.white24 : Duo.border),
           width: 1.5,
         ),
       ),
@@ -155,7 +160,7 @@ class _StatChip extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: urgent ? Duo.red : Duo.textPrimary,
+              color: urgent ? Duo.red : (isDark ? Colors.white : Duo.textPrimary),
             ),
           ),
         ],
@@ -272,6 +277,7 @@ class _StickyCtaButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final int i = state.currentNodeIndex;
     if (i >= pathNodes.length) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final node = pathNodes[i];
     final String label = node.type == PathNodeType.practice
@@ -282,9 +288,10 @@ class _StickyCtaButton extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-      decoration: const BoxDecoration(
-        color: Duo.white,
-        boxShadow: [
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: isDark ? const Border(top: BorderSide(color: Colors.white10, width: 2)) : null,
+        boxShadow: isDark ? null : const [
           BoxShadow(
             color: Color(0x0E000000),
             blurRadius: 16,
@@ -513,6 +520,7 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
   @override
   Widget build(BuildContext context) {
     const double size = 64.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final Color bgColor;
     final Color shadowColor;
@@ -532,9 +540,9 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
       iconColor = Duo.white;
       icon = widget.data.icon;
     } else {
-      bgColor = const Color(0xFFE8E8E8);
-      shadowColor = const Color(0xFFC8C8C8);
-      iconColor = const Color(0xFFB0B0B0);
+      bgColor = isDark ? const Color(0xFF2E3E44) : const Color(0xFFE8E8E8);
+      shadowColor = isDark ? const Color(0xFF1F2E35) : const Color(0xFFC8C8C8);
+      iconColor = isDark ? Colors.white24 : const Color(0xFFB0B0B0);
       icon = widget.data.icon;
     }
 
@@ -566,9 +574,9 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: const Color(0xFF9E9E9E),
+                color: isDark ? const Color(0xFF4B5D65) : const Color(0xFF9E9E9E),
                 shape: BoxShape.circle,
-                border: Border.all(color: Duo.bg, width: 2.5),
+                border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2.5),
               ),
               child: const Icon(Icons.lock_rounded, size: 11, color: Duo.white),
             ),
@@ -598,7 +606,7 @@ class _PathNodeWidgetState extends State<_PathNodeWidget>
                 height: size + 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Duo.white, width: 3.5),
+                  border: Border.all(color: isDark ? Colors.white30 : Duo.white, width: 3.5),
                 ),
               ),
               child!,

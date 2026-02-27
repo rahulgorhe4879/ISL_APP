@@ -19,14 +19,36 @@ class ISLApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Duo.bg,
-        fontFamily: 'Roboto',
-      ),
-      home: const AppShell(),
+    return Consumer<AppState>(
+      builder: (context, state, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: Duo.bg,
+            cardColor: Duo.cardBg,
+            fontFamily: 'Roboto',
+            textTheme: const TextTheme(
+              bodyLarge: TextStyle(color: Duo.textPrimary),
+              bodyMedium: TextStyle(color: Duo.textPrimary),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF131F24),
+            cardColor: const Color(0xFF1F2E35),
+            fontFamily: 'Roboto',
+            textTheme: const TextTheme(
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white70),
+            ),
+          ),
+          themeMode: state.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: const AppShell(),
+        );
+      },
     );
   }
 }
@@ -52,24 +74,27 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: IndexedStack(
         index: _currentTab,
         children: _screens,
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: Duo.border, width: 2),
+            top: BorderSide(
+                color: isDark ? Colors.white10 : Duo.border, width: 2),
           ),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentTab,
           onTap: (i) => setState(() => _currentTab = i),
-          backgroundColor: Duo.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           selectedItemColor: Duo.green,
-          unselectedItemColor: Duo.textSecondary,
+          unselectedItemColor: isDark ? Colors.white38 : Duo.textSecondary,
           selectedFontSize: 12,
           unselectedFontSize: 12,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
